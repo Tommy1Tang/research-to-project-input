@@ -1,0 +1,4 @@
+interface:
+  display_name: "Research to Project Input"
+  short_description: "含统一需求图与语义门禁的需求流水线"
+  default_prompt: "Use $research-to-project-input through its pipeline runner. Resume from pipeline state, generate and validate the unified RDF requirements graph with PROV-O, SHACL, SPARQL, and OWL-RL inference, stop at both human approval gates, and produce trace-validated BPMN/OWL plus docs/input/00-07 only when the recorded stage permits it."

@@ -1,0 +1,173 @@
+{
+  "pipeline_id": "research-to-project-input",
+  "version": "2.0.0",
+  "state_file": ".requirements-pipeline/pipeline-state.json",
+  "canonical_source": "models/spec/model-spec.json",
+  "invariants": [
+    "Raw research cannot directly produce development-ready docs/input/00-07.",
+    "Modeling Markdown approval is required before canonical spec validation.",
+    "The unified requirements graph, BPMN, and OWL must be generated from one reviewed model-spec.json.",
+    "The reviewed model spec must compile into one canonical RDF requirements graph.",
+    "SHACL, OWL-RL reasoning, and SPARQL competency gates must pass before BPMN and OWL generation.",
+    "PROV-O provenance must connect graph artifacts and modeled elements to their source evidence and responsible agents.",
+    "Model approval is required before docs/input/00-07 generation.",
+    "Generated artifacts cannot be edited directly.",
+    "A request for draft or continued work cannot bypass either human approval gate.",
+    "A development-ready state requires an approved spec, exact projections, a baseline manifest, and zero traceability errors."
+  ],
+  "stages": [
+    {
+      "id": "initialized",
+      "index": 0,
+      "type": "work",
+      "next_action": "register-research",
+      "description": "Pipeline state exists; research evidence has not been registered."
+    },
+    {
+      "id": "research_registered",
+      "index": 1,
+      "type": "automated",
+      "next_action": "scaffold-review",
+      "description": "Research source files are registered and hashed."
+    },
+    {
+      "id": "modeling_scaffolded",
+      "index": 2,
+      "type": "human_gate",
+      "next_action": "approve-modeling",
+      "description": "Modeling-review Markdown exists and must be completed and reviewed by a person."
+    },
+    {
+      "id": "modeling_review_approved",
+      "index": 3,
+      "type": "automated",
+      "next_action": "validate-spec",
+      "description": "Process, domain, state, rule, interface, evidence, and question Markdown is approved."
+    },
+    {
+      "id": "spec_reviewed",
+      "index": 4,
+      "type": "automated",
+      "next_action": "generate-graph",
+      "description": "The canonical model spec is reviewed, internally consistent, and ready for graph compilation."
+    },
+    {
+      "id": "graph_generated",
+      "index": 5,
+      "type": "automated",
+      "next_action": "validate-graph",
+      "description": "The unified RDF requirements graph, SHACL shapes, ontology, and SPARQL query set exist."
+    },
+    {
+      "id": "graph_validated",
+      "index": 6,
+      "type": "automated",
+      "next_action": "generate-models",
+      "description": "Canonical projection, SHACL, OWL-RL reasoning, and SPARQL gates pass."
+    },
+    {
+      "id": "models_generated",
+      "index": 7,
+      "type": "human_gate",
+      "next_action": "approve-models",
+      "description": "Candidate RDF graph, BPMN, and OWL projections exist and require business/model review."
+    },
+    {
+      "id": "models_approved",
+      "index": 8,
+      "type": "automated",
+      "next_action": "generate-input",
+      "description": "RDF graph, BPMN, and OWL are approved, regenerated, and revalidated from the approved canonical spec."
+    },
+    {
+      "id": "development_input_generated",
+      "index": 9,
+      "type": "automated",
+      "next_action": "finalize",
+      "description": "The eight docs/input/00-07 files are exact projections of the approved model."
+    },
+    {
+      "id": "development_ready",
+      "index": 10,
+      "type": "terminal",
+      "next_action": "validate",
+      "description": "Baseline hashes and end-to-end traceability checks pass."
+    }
+  ],
+  "transitions": [
+    {
+      "from": "initialized",
+      "action": "register-research",
+      "to": "research_registered",
+      "gate": "research files exist and are hashed"
+    },
+    {
+      "from": "research_registered",
+      "action": "scaffold-review",
+      "to": "modeling_scaffolded",
+      "gate": "modeling-review Markdown skeletons created"
+    },
+    {
+      "from": "modeling_scaffolded",
+      "action": "approve-modeling",
+      "to": "modeling_review_approved",
+      "gate": "explicit human confirmation and completed 00-05 modeling Markdown"
+    },
+    {
+      "from": "modeling_review_approved",
+      "action": "validate-spec",
+      "to": "spec_reviewed",
+      "gate": "model-spec.json has review_status reviewed and passes reference validation"
+    },
+    {
+      "from": "spec_reviewed",
+      "action": "generate-graph",
+      "to": "graph_generated",
+      "gate": "canonical RDF graph and graph contracts generated from the unchanged reviewed spec"
+    },
+    {
+      "from": "graph_generated",
+      "action": "validate-graph",
+      "to": "graph_validated",
+      "gate": "canonical graph comparison, SHACL, OWL-RL reasoning, and SPARQL gates pass"
+    },
+    {
+      "from": "graph_validated",
+      "action": "generate-models",
+      "to": "models_generated",
+      "gate": "BPMN and OWL generated after graph validation and XML validation passes"
+    },
+    {
+      "from": "models_generated",
+      "action": "approve-models",
+      "to": "models_approved",
+      "gate": "explicit human confirmation, completed model review record, unchanged candidate models"
+    },
+    {
+      "from": "models_approved",
+      "action": "generate-input",
+      "to": "development_input_generated",
+      "gate": "approved spec validation and deterministic 00-07 generation"
+    },
+    {
+      "from": "development_input_generated",
+      "action": "finalize",
+      "to": "development_ready",
+      "gate": "baseline manifest created and full traceability validation passes"
+    }
+  ],
+  "approval_gates": [
+    {
+      "id": "modeling",
+      "stage": "modeling_scaffolded",
+      "required_actor": "human",
+      "required_record": "reviewer, review_date, approval_note, explicit confirmation"
+    },
+    {
+      "id": "models",
+      "stage": "models_generated",
+      "required_actor": "human",
+      "required_record": "reviewer, review_date, approval_note, explicit confirmation, graph validation report, and 06-模型审核记录.md"
+    }
+  ]
+}

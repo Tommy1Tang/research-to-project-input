@@ -1,0 +1,10 @@
+PREFIX req: <https://openai.example/requirements-schema#>
+
+SELECT ?node ?stableId
+WHERE {
+  ?node a req:ProcessNode ;
+        req:stableId ?stableId .
+  FILTER NOT EXISTS { ?node req:supportedBy ?evidence }
+  FILTER NOT EXISTS { ?node req:hasQuestion ?question }
+}
+ORDER BY ?stableId

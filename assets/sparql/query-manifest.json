@@ -1,0 +1,47 @@
+{
+  "schema_version": "1.0.0",
+  "queries": [
+    {
+      "query_id": "QRY-GRAPH-001",
+      "file": "QRY-GRAPH-001-untraced-nodes.rq",
+      "purpose": "Find process nodes without evidence or an explicit question.",
+      "expectation": "empty",
+      "severity": "error"
+    },
+    {
+      "query_id": "QRY-GRAPH-002",
+      "file": "QRY-GRAPH-002-stateful-without-transition.rq",
+      "purpose": "Find stateful entities without a transition or question.",
+      "expectation": "empty",
+      "severity": "error"
+    },
+    {
+      "query_id": "QRY-GRAPH-003",
+      "file": "QRY-GRAPH-003-must-capability-gaps.rq",
+      "purpose": "Find Must capabilities without node usage or acceptance criteria.",
+      "expectation": "empty",
+      "severity": "error"
+    },
+    {
+      "query_id": "QRY-GRAPH-004",
+      "file": "QRY-GRAPH-004-open-high-blockers.rq",
+      "purpose": "Find open High blocking questions.",
+      "expectation": "empty_when_approved",
+      "severity": "review"
+    },
+    {
+      "query_id": "QRY-GRAPH-005",
+      "file": "QRY-GRAPH-005-capability-reuse.rq",
+      "purpose": "List capabilities reused by more than one process node.",
+      "expectation": "informational",
+      "severity": "info"
+    },
+    {
+      "query_id": "QRY-GRAPH-006",
+      "file": "QRY-GRAPH-006-impact-map.rq",
+      "purpose": "List process-node-to-capability/entity/rule impact links.",
+      "expectation": "informational",
+      "severity": "info"
+    }
+  ]
+}

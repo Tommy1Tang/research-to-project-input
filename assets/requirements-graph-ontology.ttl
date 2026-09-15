@@ -1,0 +1,170 @@
+@prefix req: <https://openai.example/requirements-schema#> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+req:RequirementsGraphOntology a owl:Ontology ;
+    rdfs:label "Requirements Graph Ontology"@en ;
+    owl:versionInfo "1.0.0" .
+
+req:TraceableElement a owl:Class .
+req:Project a owl:Class ; rdfs:subClassOf req:TraceableElement .
+req:Scenario a owl:Class ; rdfs:subClassOf req:TraceableElement .
+req:Process a owl:Class ; rdfs:subClassOf req:TraceableElement .
+req:ProcessNode a owl:Class ; rdfs:subClassOf req:TraceableElement .
+req:SequenceFlow a owl:Class ; rdfs:subClassOf req:TraceableElement .
+req:Exception a owl:Class ; rdfs:subClassOf req:TraceableElement .
+req:Role a owl:Class ; rdfs:subClassOf req:TraceableElement .
+req:Participant a owl:Class ; rdfs:subClassOf req:TraceableElement .
+req:Lane a owl:Class ; rdfs:subClassOf req:TraceableElement .
+req:MessageFlow a owl:Class ; rdfs:subClassOf req:TraceableElement .
+req:Entity a owl:Class ; rdfs:subClassOf req:TraceableElement .
+req:EntityAttribute a owl:Class ; rdfs:subClassOf req:TraceableElement .
+req:EntityRelation a owl:Class ; rdfs:subClassOf req:TraceableElement .
+req:State a owl:Class ; rdfs:subClassOf req:TraceableElement .
+req:StateTransition a owl:Class ; rdfs:subClassOf req:TraceableElement .
+req:BusinessRule a owl:Class ; rdfs:subClassOf req:TraceableElement .
+req:Interface a owl:Class ; rdfs:subClassOf req:TraceableElement .
+req:Capability a owl:Class ; rdfs:subClassOf req:TraceableElement .
+req:Evidence a owl:Class ; rdfs:subClassOf req:TraceableElement, prov:Entity .
+req:Question a owl:Class ; rdfs:subClassOf req:TraceableElement .
+req:Inference a owl:Class ; rdfs:subClassOf req:TraceableElement .
+req:Decision a owl:Class ; rdfs:subClassOf req:TraceableElement .
+req:ModelArtifact a owl:Class ; rdfs:subClassOf prov:Entity .
+req:GenerationActivity a owl:Class ; rdfs:subClassOf prov:Activity .
+req:ReviewActivity a owl:Class ; rdfs:subClassOf prov:Activity .
+
+req:ProcessNode owl:disjointWith req:Entity .
+req:Evidence owl:disjointWith req:Question .
+req:BusinessRule owl:disjointWith req:Capability .
+
+req:stableId a owl:DatatypeProperty, owl:FunctionalProperty ;
+    rdfs:domain req:TraceableElement ;
+    rdfs:range xsd:string .
+req:name a owl:DatatypeProperty ;
+    rdfs:range xsd:string .
+req:description a owl:DatatypeProperty ;
+    rdfs:range xsd:string .
+req:reviewStatus a owl:DatatypeProperty ;
+    rdfs:range xsd:string .
+req:modelVersion a owl:DatatypeProperty ;
+    rdfs:range xsd:string .
+req:baselineId a owl:DatatypeProperty ;
+    rdfs:range xsd:string .
+req:nodeType a owl:DatatypeProperty ;
+    rdfs:range xsd:string .
+req:trigger a owl:DatatypeProperty ;
+    rdfs:range xsd:string .
+req:condition a owl:DatatypeProperty ;
+    rdfs:range xsd:string .
+req:logic a owl:DatatypeProperty ;
+    rdfs:range xsd:string .
+req:cardinality a owl:DatatypeProperty ;
+    rdfs:range xsd:string .
+req:priority a owl:DatatypeProperty ;
+    rdfs:range xsd:string .
+req:blockingLevel a owl:DatatypeProperty ;
+    rdfs:range xsd:string .
+req:questionStatus a owl:DatatypeProperty ;
+    rdfs:range xsd:string .
+req:stateful a owl:DatatypeProperty ;
+    rdfs:range xsd:boolean .
+req:required a owl:DatatypeProperty ;
+    rdfs:range xsd:boolean .
+req:inputValue a owl:DatatypeProperty ;
+    rdfs:range xsd:string .
+req:outputValue a owl:DatatypeProperty ;
+    rdfs:range xsd:string .
+req:acceptanceCriterion a owl:DatatypeProperty ;
+    rdfs:range xsd:string .
+req:sourceText a owl:DatatypeProperty ;
+    rdfs:range xsd:string .
+req:scopeIn a owl:DatatypeProperty ;
+    rdfs:range xsd:string .
+req:scopeOut a owl:DatatypeProperty ;
+    rdfs:range xsd:string .
+req:constraintText a owl:DatatypeProperty ;
+    rdfs:range xsd:string .
+
+req:hasScenario a owl:ObjectProperty ;
+    rdfs:domain req:Project ;
+    rdfs:range req:Scenario .
+req:hasProcess a owl:ObjectProperty ;
+    rdfs:range req:Process .
+req:belongsToProcess a owl:ObjectProperty, owl:FunctionalProperty ;
+    rdfs:domain req:ProcessNode ;
+    rdfs:range req:Process .
+req:hasNode a owl:ObjectProperty ;
+    rdfs:domain req:Process ;
+    rdfs:range req:ProcessNode ;
+    owl:inverseOf req:belongsToProcess .
+req:hasStartNode a owl:ObjectProperty ;
+    rdfs:subPropertyOf req:hasNode .
+req:hasEndNode a owl:ObjectProperty ;
+    rdfs:subPropertyOf req:hasNode .
+req:sourceNode a owl:ObjectProperty, owl:FunctionalProperty ;
+    rdfs:domain req:SequenceFlow ;
+    rdfs:range req:ProcessNode .
+req:targetNode a owl:ObjectProperty, owl:FunctionalProperty ;
+    rdfs:domain req:SequenceFlow ;
+    rdfs:range req:ProcessNode .
+req:hasFlow a owl:ObjectProperty ;
+    rdfs:domain req:Process ;
+    rdfs:range req:SequenceFlow .
+req:hasException a owl:ObjectProperty ;
+    rdfs:range req:Exception .
+req:triggerNode a owl:ObjectProperty ;
+    rdfs:range req:ProcessNode .
+req:usesCapability a owl:ObjectProperty ;
+    rdfs:range req:Capability .
+req:usedByNode a owl:ObjectProperty ;
+    rdfs:domain req:Capability ;
+    rdfs:range req:ProcessNode .
+req:touchesEntity a owl:ObjectProperty ;
+    rdfs:range req:Entity .
+req:governedByRule a owl:ObjectProperty ;
+    rdfs:range req:BusinessRule .
+req:usesInterface a owl:ObjectProperty ;
+    rdfs:range req:Interface .
+req:performedByRole a owl:ObjectProperty ;
+    rdfs:range req:Role .
+req:supportedBy a owl:ObjectProperty ;
+    rdfs:range req:Evidence .
+req:hasQuestion a owl:ObjectProperty ;
+    rdfs:range req:Question .
+req:hasStateTransition a owl:ObjectProperty ;
+    rdfs:range req:StateTransition .
+req:transitionOfEntity a owl:ObjectProperty, owl:FunctionalProperty ;
+    rdfs:domain req:StateTransition ;
+    rdfs:range req:Entity .
+req:sourceState a owl:ObjectProperty, owl:FunctionalProperty ;
+    rdfs:domain req:StateTransition ;
+    rdfs:range req:State .
+req:targetState a owl:ObjectProperty, owl:FunctionalProperty ;
+    rdfs:domain req:StateTransition ;
+    rdfs:range req:State .
+req:sourceEntity a owl:ObjectProperty, owl:FunctionalProperty ;
+    rdfs:domain req:EntityRelation ;
+    rdfs:range req:Entity .
+req:targetEntity a owl:ObjectProperty, owl:FunctionalProperty ;
+    rdfs:domain req:EntityRelation ;
+    rdfs:range req:Entity .
+req:hasAttribute a owl:ObjectProperty ;
+    rdfs:domain req:Entity ;
+    rdfs:range req:EntityAttribute .
+req:hasParticipant a owl:ObjectProperty ;
+    rdfs:domain req:Process ;
+    rdfs:range req:Participant .
+req:hasLane a owl:ObjectProperty ;
+    rdfs:domain req:Participant ;
+    rdfs:range req:Lane .
+req:hasMessageFlow a owl:ObjectProperty ;
+    rdfs:domain req:Process ;
+    rdfs:range req:MessageFlow .
+req:sourceParticipant a owl:ObjectProperty ;
+    rdfs:domain req:MessageFlow .
+req:targetParticipant a owl:ObjectProperty ;
+    rdfs:domain req:MessageFlow .
+req:relatedTo a owl:ObjectProperty .

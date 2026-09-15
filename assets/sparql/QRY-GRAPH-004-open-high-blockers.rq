@@ -1,0 +1,11 @@
+PREFIX req: <https://openai.example/requirements-schema#>
+
+SELECT ?question ?stableId
+WHERE {
+  ?question a req:Question ;
+            req:stableId ?stableId ;
+            req:blockingLevel "High" ;
+            req:questionStatus ?status .
+  FILTER(LCASE(STR(?status)) != "closed")
+}
+ORDER BY ?stableId

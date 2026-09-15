@@ -1,0 +1,289 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions
+  xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+  xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+  xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+  xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+  xmlns:camunda="http://camunda.org/schema/1.0/bpmn"
+  id="Definitions_RequirementsPipeline"
+  targetNamespace="https://openai.example/requirements-pipeline"
+  exporter="research-to-project-input"
+  exporterVersion="2.0.0">
+  <bpmn:process id="Process_ResearchToProjectInput" name="调研到 AI 开发输入可追溯流水线" isExecutable="false">
+    <bpmn:startEvent id="Event_Start" name="启动需求流水线">
+      <bpmn:outgoing>Flow_01</bpmn:outgoing>
+    </bpmn:startEvent>
+
+    <bpmn:task id="Action_RegisterResearch" name="登记并锁定调研材料">
+      <bpmn:extensionElements>
+        <camunda:properties>
+          <camunda:property name="来源阶段" value="initialized"/>
+          <camunda:property name="目标阶段" value="research_registered"/>
+          <camunda:property name="执行动作" value="register-research"/>
+        </camunda:properties>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_01</bpmn:incoming>
+      <bpmn:outgoing>Flow_02</bpmn:outgoing>
+    </bpmn:task>
+
+    <bpmn:serviceTask id="Action_ScaffoldReview" name="生成初版 Markdown 业务模型">
+      <bpmn:extensionElements>
+        <camunda:properties>
+          <camunda:property name="来源阶段" value="research_registered"/>
+          <camunda:property name="目标阶段" value="modeling_scaffolded"/>
+          <camunda:property name="执行动作" value="scaffold-review"/>
+        </camunda:properties>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_02</bpmn:incoming>
+      <bpmn:outgoing>Flow_03</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:userTask id="Gate_ModelingReview" name="人工审核初版 Markdown 业务模型">
+      <bpmn:extensionElements>
+        <camunda:properties>
+          <camunda:property name="审批门禁" value="modeling"/>
+          <camunda:property name="来源阶段" value="modeling_scaffolded"/>
+          <camunda:property name="目标阶段" value="modeling_review_approved"/>
+          <camunda:property name="执行动作" value="approve-modeling"/>
+        </camunda:properties>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_03</bpmn:incoming>
+      <bpmn:incoming>Flow_05</bpmn:incoming>
+      <bpmn:incoming>Flow_11</bpmn:incoming>
+      <bpmn:outgoing>Flow_04</bpmn:outgoing>
+    </bpmn:userTask>
+
+    <bpmn:exclusiveGateway id="Gateway_ModelingApproved" name="初版业务模型是否通过" default="Flow_05">
+      <bpmn:incoming>Flow_04</bpmn:incoming>
+      <bpmn:outgoing>Flow_05</bpmn:outgoing>
+      <bpmn:outgoing>Flow_06</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+
+    <bpmn:serviceTask id="Action_ValidateSpec" name="编译并校验统一模型规范">
+      <bpmn:extensionElements>
+        <camunda:properties>
+          <camunda:property name="来源阶段" value="modeling_review_approved"/>
+          <camunda:property name="目标阶段" value="spec_reviewed"/>
+          <camunda:property name="执行动作" value="validate-spec"/>
+        </camunda:properties>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_06</bpmn:incoming>
+      <bpmn:outgoing>Flow_07</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:serviceTask id="Action_GenerateGraph" name="生成统一需求图及图约束">
+      <bpmn:extensionElements>
+        <camunda:properties>
+          <camunda:property name="来源阶段" value="spec_reviewed"/>
+          <camunda:property name="目标阶段" value="graph_generated"/>
+          <camunda:property name="执行动作" value="generate-graph"/>
+        </camunda:properties>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_07</bpmn:incoming>
+      <bpmn:outgoing>Flow_07B</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:serviceTask id="Action_ValidateGraph" name="执行需求图约束、推理与查询门禁">
+      <bpmn:extensionElements>
+        <camunda:properties>
+          <camunda:property name="来源阶段" value="graph_generated"/>
+          <camunda:property name="目标阶段" value="graph_validated"/>
+          <camunda:property name="执行动作" value="validate-graph"/>
+        </camunda:properties>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_07B</bpmn:incoming>
+      <bpmn:outgoing>Flow_07C</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:serviceTask id="Action_GenerateModels" name="生成 BPMN 中文流程模型与 OWL 中文领域本体">
+      <bpmn:extensionElements>
+        <camunda:properties>
+          <camunda:property name="来源阶段" value="graph_validated"/>
+          <camunda:property name="目标阶段" value="models_generated"/>
+          <camunda:property name="执行动作" value="generate-models"/>
+        </camunda:properties>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_07C</bpmn:incoming>
+      <bpmn:outgoing>Flow_08</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:userTask id="Gate_ModelReview" name="人工审核统一需求图、BPMN 与 OWL">
+      <bpmn:extensionElements>
+        <camunda:properties>
+          <camunda:property name="审批门禁" value="models"/>
+          <camunda:property name="来源阶段" value="models_generated"/>
+          <camunda:property name="目标阶段" value="models_approved"/>
+          <camunda:property name="执行动作" value="approve-models"/>
+        </camunda:properties>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_08</bpmn:incoming>
+      <bpmn:outgoing>Flow_09</bpmn:outgoing>
+    </bpmn:userTask>
+
+    <bpmn:exclusiveGateway id="Gateway_ModelsApproved" name="正式业务模型是否通过" default="Flow_11">
+      <bpmn:incoming>Flow_09</bpmn:incoming>
+      <bpmn:outgoing>Flow_10</bpmn:outgoing>
+      <bpmn:outgoing>Flow_11</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+
+    <bpmn:serviceTask id="Action_GenerateInput" name="生成 00-07 开发输入文档">
+      <bpmn:extensionElements>
+        <camunda:properties>
+          <camunda:property name="来源阶段" value="models_approved"/>
+          <camunda:property name="目标阶段" value="development_input_generated"/>
+          <camunda:property name="执行动作" value="generate-input"/>
+        </camunda:properties>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_10</bpmn:incoming>
+      <bpmn:outgoing>Flow_12</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:serviceTask id="Action_Finalize" name="锁定开发基线并执行全链路校验">
+      <bpmn:extensionElements>
+        <camunda:properties>
+          <camunda:property name="来源阶段" value="development_input_generated"/>
+          <camunda:property name="目标阶段" value="development_ready"/>
+          <camunda:property name="执行动作" value="finalize"/>
+        </camunda:properties>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_12</bpmn:incoming>
+      <bpmn:outgoing>Flow_13</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:endEvent id="Event_DevelopmentReady" name="允许进入 PRD 与代码开发">
+      <bpmn:incoming>Flow_13</bpmn:incoming>
+    </bpmn:endEvent>
+
+    <bpmn:sequenceFlow id="Flow_01" name="启动登记" sourceRef="Event_Start" targetRef="Action_RegisterResearch"/>
+    <bpmn:sequenceFlow id="Flow_02" name="调研材料已登记" sourceRef="Action_RegisterResearch" targetRef="Action_ScaffoldReview"/>
+    <bpmn:sequenceFlow id="Flow_03" name="初版业务模型已生成" sourceRef="Action_ScaffoldReview" targetRef="Gate_ModelingReview"/>
+    <bpmn:sequenceFlow id="Flow_04" name="提交第一次审核结论" sourceRef="Gate_ModelingReview" targetRef="Gateway_ModelingApproved"/>
+    <bpmn:sequenceFlow id="Flow_05" name="否，补充调研和修订" sourceRef="Gateway_ModelingApproved" targetRef="Gate_ModelingReview"/>
+    <bpmn:sequenceFlow id="Flow_06" name="是，编译统一模型规范" sourceRef="Gateway_ModelingApproved" targetRef="Action_ValidateSpec">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">人工审核结论为通过</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_07" name="统一模型规范校验通过" sourceRef="Action_ValidateSpec" targetRef="Action_GenerateGraph"/>
+    <bpmn:sequenceFlow id="Flow_07B" name="统一需求图已生成" sourceRef="Action_GenerateGraph" targetRef="Action_ValidateGraph"/>
+    <bpmn:sequenceFlow id="Flow_07C" name="需求图语义验证通过" sourceRef="Action_ValidateGraph" targetRef="Action_GenerateModels"/>
+    <bpmn:sequenceFlow id="Flow_08" name="提交正式模型审核" sourceRef="Action_GenerateModels" targetRef="Gate_ModelReview"/>
+    <bpmn:sequenceFlow id="Flow_09" name="提交第二次审核结论" sourceRef="Gate_ModelReview" targetRef="Gateway_ModelsApproved"/>
+    <bpmn:sequenceFlow id="Flow_10" name="是，生成开发输入" sourceRef="Gateway_ModelsApproved" targetRef="Action_GenerateInput">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">正式模型审核结论为通过</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_11" name="否，回到初版业务模型修订" sourceRef="Gateway_ModelsApproved" targetRef="Gate_ModelingReview"/>
+    <bpmn:sequenceFlow id="Flow_12" name="开发输入已生成" sourceRef="Action_GenerateInput" targetRef="Action_Finalize"/>
+    <bpmn:sequenceFlow id="Flow_13" name="基线校验通过" sourceRef="Action_Finalize" targetRef="Event_DevelopmentReady"/>
+  </bpmn:process>
+
+  <bpmndi:BPMNDiagram id="BPMNDiagram_RequirementsPipeline">
+    <bpmndi:BPMNPlane id="BPMNPlane_RequirementsPipeline" bpmnElement="Process_ResearchToProjectInput">
+      <bpmndi:BPMNShape id="Event_Start_di" bpmnElement="Event_Start">
+        <dc:Bounds x="80" y="192" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Action_RegisterResearch_di" bpmnElement="Action_RegisterResearch">
+        <dc:Bounds x="150" y="170" width="140" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Action_ScaffoldReview_di" bpmnElement="Action_ScaffoldReview">
+        <dc:Bounds x="330" y="170" width="140" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gate_ModelingReview_di" bpmnElement="Gate_ModelingReview">
+        <dc:Bounds x="510" y="170" width="150" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_ModelingApproved_di" bpmnElement="Gateway_ModelingApproved" isMarkerVisible="true">
+        <dc:Bounds x="700" y="185" width="50" height="50"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Action_ValidateSpec_di" bpmnElement="Action_ValidateSpec">
+        <dc:Bounds x="790" y="170" width="150" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Action_GenerateGraph_di" bpmnElement="Action_GenerateGraph">
+        <dc:Bounds x="980" y="170" width="150" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Action_ValidateGraph_di" bpmnElement="Action_ValidateGraph">
+        <dc:Bounds x="1170" y="170" width="150" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Action_GenerateModels_di" bpmnElement="Action_GenerateModels">
+        <dc:Bounds x="1360" y="170" width="170" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gate_ModelReview_di" bpmnElement="Gate_ModelReview">
+        <dc:Bounds x="1570" y="170" width="170" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_ModelsApproved_di" bpmnElement="Gateway_ModelsApproved" isMarkerVisible="true">
+        <dc:Bounds x="1780" y="185" width="50" height="50"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Action_GenerateInput_di" bpmnElement="Action_GenerateInput">
+        <dc:Bounds x="1870" y="170" width="150" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Action_Finalize_di" bpmnElement="Action_Finalize">
+        <dc:Bounds x="2060" y="170" width="160" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_DevelopmentReady_di" bpmnElement="Event_DevelopmentReady">
+        <dc:Bounds x="2260" y="192" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNEdge id="Flow_01_di" bpmnElement="Flow_01">
+        <di:waypoint x="116" y="210"/>
+        <di:waypoint x="150" y="210"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_02_di" bpmnElement="Flow_02">
+        <di:waypoint x="290" y="210"/>
+        <di:waypoint x="330" y="210"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_03_di" bpmnElement="Flow_03">
+        <di:waypoint x="470" y="210"/>
+        <di:waypoint x="510" y="210"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_04_di" bpmnElement="Flow_04">
+        <di:waypoint x="660" y="210"/>
+        <di:waypoint x="700" y="210"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_05_di" bpmnElement="Flow_05">
+        <di:waypoint x="725" y="235"/>
+        <di:waypoint x="725" y="330"/>
+        <di:waypoint x="585" y="330"/>
+        <di:waypoint x="585" y="250"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_06_di" bpmnElement="Flow_06">
+        <di:waypoint x="750" y="210"/>
+        <di:waypoint x="790" y="210"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_07_di" bpmnElement="Flow_07">
+        <di:waypoint x="940" y="210"/>
+        <di:waypoint x="980" y="210"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_07B_di" bpmnElement="Flow_07B">
+        <di:waypoint x="1130" y="210"/>
+        <di:waypoint x="1170" y="210"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_07C_di" bpmnElement="Flow_07C">
+        <di:waypoint x="1320" y="210"/>
+        <di:waypoint x="1360" y="210"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_08_di" bpmnElement="Flow_08">
+        <di:waypoint x="1530" y="210"/>
+        <di:waypoint x="1570" y="210"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_09_di" bpmnElement="Flow_09">
+        <di:waypoint x="1740" y="210"/>
+        <di:waypoint x="1780" y="210"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_10_di" bpmnElement="Flow_10">
+        <di:waypoint x="1830" y="210"/>
+        <di:waypoint x="1870" y="210"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_11_di" bpmnElement="Flow_11">
+        <di:waypoint x="1805" y="235"/>
+        <di:waypoint x="1805" y="410"/>
+        <di:waypoint x="585" y="410"/>
+        <di:waypoint x="585" y="250"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_12_di" bpmnElement="Flow_12">
+        <di:waypoint x="2020" y="210"/>
+        <di:waypoint x="2060" y="210"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_13_di" bpmnElement="Flow_13">
+        <di:waypoint x="2220" y="210"/>
+        <di:waypoint x="2260" y="210"/>
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

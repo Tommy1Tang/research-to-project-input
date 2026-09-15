@@ -1,0 +1,11 @@
+PREFIX req: <https://openai.example/requirements-schema#>
+
+SELECT ?capability ?stableId (COUNT(DISTINCT ?node) AS ?nodeCount)
+WHERE {
+  ?capability a req:Capability ;
+              req:stableId ?stableId ;
+              req:usedByNode ?node .
+}
+GROUP BY ?capability ?stableId
+HAVING(COUNT(DISTINCT ?node) > 1)
+ORDER BY DESC(?nodeCount) ?stableId

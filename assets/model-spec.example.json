@@ -1,0 +1,1039 @@
+{
+  "meta": {
+    "project_id": "PROJECT-WORK-ORDER",
+    "project_name": "工单处理系统（示例）",
+    "phase": "一期",
+    "model_version": "1.0.0",
+    "baseline_id": "BASELINE-WO-001",
+    "review_status": "approved",
+    "reviewer": "业务负责人、领域负责人、模型审核人",
+    "review_date": "2026-07-30",
+    "review_files": [
+      "models/review/00-建模范围.md",
+      "models/review/01-流程建模台账.md",
+      "models/review/02-领域建模台账.md",
+      "models/review/03-状态与规则台账.md",
+      "models/review/04-接口与消息台账.md",
+      "models/review/05-证据与待确认问题.md",
+      "models/review/06-模型审核记录.md"
+    ],
+    "ontology_iri": "https://example.com/ontology/work-order#",
+    "ontology_id": "work-order-ontology"
+  },
+  "scope": {
+    "business_domain": "通用工单处理",
+    "goals": [
+      "打通外部任务接入、结果处理和结果数据准备流程"
+    ],
+    "in_scope": [
+      "软件流程、任务、结果计算和半自动结果数据准备"
+    ],
+    "out_of_scope": [
+      "外部设备接口实施",
+      "一期全自动结果生成"
+    ],
+    "constraints": [
+      {
+        "dimension": "一期边界",
+        "requirement": "系统准备结果数据，人工确认和应用结果",
+        "source": "项目范围确认",
+        "evidence_ids": [
+          "EV-001"
+        ]
+      }
+    ],
+    "success_metrics": [
+      {
+        "metric": "试运行结果",
+        "target": "业务用户确认可用",
+        "measurement": "用户试运行"
+      }
+    ]
+  },
+  "roles": [
+    {
+      "role_id": "ROLE-SYSTEM",
+      "name": "系统",
+      "responsibilities": [
+        "接收任务数据",
+        "准备结果数据"
+      ],
+      "usage_frequency": "高",
+      "evidence_ids": [
+        "EV-001"
+      ]
+    },
+    {
+      "role_id": "ROLE-TESTER",
+      "name": "处理员",
+      "responsibilities": [
+        "确认处理结果"
+      ],
+      "usage_frequency": "高",
+      "evidence_ids": [
+        "EV-001"
+      ]
+    }
+  ],
+  "scenarios": [
+    {
+      "scenario_id": "SC-RESULT-PREP",
+      "name": "工单结果准备",
+      "description": "系统取得任务和结果数据并准备供人工应用的结果数据",
+      "role_ids": [
+        "ROLE-SYSTEM",
+        "ROLE-TESTER"
+      ],
+      "process_ids": [
+        "PROC-RESULT-PREP"
+      ],
+      "priority": "Must",
+      "evidence_ids": [
+        "EV-001"
+      ],
+      "question_ids": [
+        "Q-RESULT-FIELDS"
+      ]
+    }
+  ],
+  "processes": [
+    {
+      "process_id": "PROC-RESULT-PREP",
+      "name": "工单结果数据准备流程",
+      "scenario_ids": [
+        "SC-RESULT-PREP"
+      ],
+      "trigger": "上游业务系统产生工单",
+      "start_event": "收到工单",
+      "end_result": "形成待人工确认的结果数据集",
+      "role_ids": [
+        "ROLE-SYSTEM",
+        "ROLE-TESTER"
+      ],
+      "entity_ids": [
+        "ENT-TEST-TASK",
+        "ENT-TEST-RESULT"
+      ],
+      "interface_ids": [
+        "IF-TASK-IMPORT"
+      ],
+      "evidence_ids": [
+        "EV-001"
+      ],
+      "question_ids": [
+        "Q-RESULT-FIELDS"
+      ],
+      "participants": [
+        {
+          "participant_id": "PART-LAB-SYSTEM",
+          "name": "工单处理系统",
+          "process_ref": true,
+          "role_ids": [
+            "ROLE-SYSTEM",
+            "ROLE-TESTER"
+          ],
+          "evidence_ids": [
+            "EV-001"
+          ],
+          "lanes": [
+            {
+              "lane_id": "LANE-SYSTEM",
+              "name": "系统",
+              "role_id": "ROLE-SYSTEM",
+              "evidence_ids": [
+                "EV-001"
+              ]
+            },
+            {
+              "lane_id": "LANE-TESTER",
+              "name": "处理员",
+              "role_id": "ROLE-TESTER",
+              "evidence_ids": [
+                "EV-001"
+              ]
+            }
+          ]
+        },
+        {
+          "participant_id": "PART-SAP-OA",
+          "name": "上游业务系统",
+          "process_ref": false,
+          "role_ids": [],
+          "evidence_ids": [
+            "EV-001"
+          ],
+          "lanes": []
+        }
+      ],
+      "nodes": [
+        {
+          "node_id": "ND-START",
+          "name": "收到工单",
+          "type": "startEvent",
+          "participant_id": "PART-LAB-SYSTEM",
+          "lane_id": "LANE-SYSTEM",
+          "actor_role_id": "ROLE-SYSTEM",
+          "trigger": "外部任务到达",
+          "inputs": [
+            "工单消息"
+          ],
+          "outputs": [
+            "流程实例"
+          ],
+          "capability_ids": [],
+          "entity_ids": [
+            "ENT-TEST-TASK"
+          ],
+          "rule_ids": [],
+          "state_ids": [],
+          "interface_ids": [
+            "IF-TASK-IMPORT"
+          ],
+          "exception_ids": [],
+          "evidence_ids": [
+            "EV-001"
+          ],
+          "question_ids": [
+            "Q-INTERFACE-CONTRACT"
+          ]
+        },
+        {
+          "node_id": "ND-IMPORT-TASK",
+          "name": "导入工单",
+          "type": "serviceTask",
+          "participant_id": "PART-LAB-SYSTEM",
+          "lane_id": "LANE-SYSTEM",
+          "actor_role_id": "ROLE-SYSTEM",
+          "trigger": "收到外部任务",
+          "inputs": [
+            "外部任务字段"
+          ],
+          "outputs": [
+            "标准化工单"
+          ],
+          "capability_ids": [
+            "CAP-TASK-IMPORT"
+          ],
+          "entity_ids": [
+            "ENT-TEST-TASK"
+          ],
+          "rule_ids": [
+            "R-TASK-COMPLETE"
+          ],
+          "state_ids": [
+            "ST-TASK-IMPORTED"
+          ],
+          "interface_ids": [
+            "IF-TASK-IMPORT"
+          ],
+          "exception_ids": [
+            "EX-TASK-INCOMPLETE"
+          ],
+          "evidence_ids": [
+            "EV-001"
+          ],
+          "question_ids": [
+            "Q-INTERFACE-CONTRACT"
+          ]
+        },
+        {
+          "node_id": "GW-TASK-COMPLETE",
+          "name": "任务数据是否完整",
+          "type": "exclusiveGateway",
+          "participant_id": "PART-LAB-SYSTEM",
+          "lane_id": "LANE-SYSTEM",
+          "actor_role_id": "ROLE-SYSTEM",
+          "trigger": "任务标准化完成",
+          "inputs": [
+            "标准化工单"
+          ],
+          "outputs": [
+            "完整性判断"
+          ],
+          "gateway_condition": "按 R-TASK-COMPLETE 判断",
+          "capability_ids": [
+            "CAP-TASK-IMPORT"
+          ],
+          "entity_ids": [
+            "ENT-TEST-TASK"
+          ],
+          "rule_ids": [
+            "R-TASK-COMPLETE"
+          ],
+          "state_ids": [],
+          "interface_ids": [],
+          "exception_ids": [
+            "EX-TASK-INCOMPLETE"
+          ],
+          "evidence_ids": [
+            "EV-001"
+          ],
+          "question_ids": []
+        },
+        {
+          "node_id": "ND-PREPARE-RESULT",
+          "name": "准备结果数据",
+          "type": "serviceTask",
+          "participant_id": "PART-LAB-SYSTEM",
+          "lane_id": "LANE-SYSTEM",
+          "actor_role_id": "ROLE-SYSTEM",
+          "trigger": "任务数据完整",
+          "inputs": [
+            "处理结果"
+          ],
+          "outputs": [
+            "结果数据集"
+          ],
+          "capability_ids": [
+            "CAP-RESULT-DATA-PREP"
+          ],
+          "entity_ids": [
+            "ENT-TEST-RESULT"
+          ],
+          "rule_ids": [
+            "R-RESULT-NORMALIZE"
+          ],
+          "state_ids": [
+            "ST-RESULT-PREPARED"
+          ],
+          "interface_ids": [],
+          "exception_ids": [],
+          "evidence_ids": [
+            "EV-001"
+          ],
+          "question_ids": [
+            "Q-RESULT-FIELDS"
+          ]
+        },
+        {
+          "node_id": "ND-HUMAN-CONFIRM",
+          "name": "人工确认结果数据",
+          "type": "userTask",
+          "participant_id": "PART-LAB-SYSTEM",
+          "lane_id": "LANE-TESTER",
+          "actor_role_id": "ROLE-TESTER",
+          "trigger": "结果数据集生成",
+          "inputs": [
+            "结果数据集"
+          ],
+          "outputs": [
+            "已确认结果数据"
+          ],
+          "capability_ids": [
+            "CAP-RESULT-DATA-PREP"
+          ],
+          "entity_ids": [
+            "ENT-TEST-RESULT"
+          ],
+          "rule_ids": [],
+          "state_ids": [
+            "ST-RESULT-CONFIRMED"
+          ],
+          "interface_ids": [],
+          "exception_ids": [],
+          "evidence_ids": [
+            "EV-001"
+          ],
+          "question_ids": [
+            "Q-RESULT-FIELDS"
+          ]
+        },
+        {
+          "node_id": "ND-MANUAL-HANDLE",
+          "name": "人工处理不完整任务",
+          "type": "userTask",
+          "participant_id": "PART-LAB-SYSTEM",
+          "lane_id": "LANE-TESTER",
+          "actor_role_id": "ROLE-TESTER",
+          "trigger": "任务完整性校验不通过",
+          "inputs": [
+            "不完整任务和错误信息"
+          ],
+          "outputs": [
+            "人工处理记录"
+          ],
+          "capability_ids": [
+            "CAP-TASK-IMPORT"
+          ],
+          "entity_ids": [
+            "ENT-TEST-TASK"
+          ],
+          "rule_ids": [],
+          "state_ids": [],
+          "interface_ids": [],
+          "exception_ids": [
+            "EX-TASK-INCOMPLETE"
+          ],
+          "evidence_ids": [
+            "EV-001"
+          ],
+          "question_ids": []
+        },
+        {
+          "node_id": "ND-END",
+          "name": "结果数据准备完成",
+          "type": "endEvent",
+          "participant_id": "PART-LAB-SYSTEM",
+          "lane_id": "LANE-SYSTEM",
+          "actor_role_id": "ROLE-SYSTEM",
+          "trigger": "人工确认完成",
+          "inputs": [
+            "已确认结果数据"
+          ],
+          "outputs": [
+            "流程结束"
+          ],
+          "capability_ids": [],
+          "entity_ids": [
+            "ENT-TEST-RESULT"
+          ],
+          "rule_ids": [],
+          "state_ids": [],
+          "interface_ids": [],
+          "exception_ids": [],
+          "evidence_ids": [
+            "EV-001"
+          ],
+          "question_ids": []
+        }
+      ],
+      "flows": [
+        {
+          "flow_id": "FLOW-001",
+          "source": "ND-START",
+          "target": "ND-IMPORT-TASK",
+          "name": "任务到达",
+          "condition": "",
+          "rule_ids": [],
+          "evidence_ids": [
+            "EV-001"
+          ],
+          "question_ids": []
+        },
+        {
+          "flow_id": "FLOW-002",
+          "source": "ND-IMPORT-TASK",
+          "target": "GW-TASK-COMPLETE",
+          "name": "校验",
+          "condition": "",
+          "rule_ids": [
+            "R-TASK-COMPLETE"
+          ],
+          "evidence_ids": [
+            "EV-001"
+          ],
+          "question_ids": []
+        },
+        {
+          "flow_id": "FLOW-003",
+          "source": "GW-TASK-COMPLETE",
+          "target": "ND-PREPARE-RESULT",
+          "name": "完整",
+          "condition": "任务必填字段完整",
+          "rule_ids": [
+            "R-TASK-COMPLETE"
+          ],
+          "evidence_ids": [
+            "EV-001"
+          ],
+          "question_ids": []
+        },
+        {
+          "flow_id": "FLOW-004",
+          "source": "ND-PREPARE-RESULT",
+          "target": "ND-HUMAN-CONFIRM",
+          "name": "提交人工确认",
+          "condition": "",
+          "rule_ids": [],
+          "evidence_ids": [
+            "EV-001"
+          ],
+          "question_ids": []
+        },
+        {
+          "flow_id": "FLOW-005",
+          "source": "ND-HUMAN-CONFIRM",
+          "target": "ND-END",
+          "name": "确认完成",
+          "condition": "",
+          "rule_ids": [],
+          "evidence_ids": [
+            "EV-001"
+          ],
+          "question_ids": []
+        },
+        {
+          "flow_id": "FLOW-006",
+          "source": "GW-TASK-COMPLETE",
+          "target": "ND-MANUAL-HANDLE",
+          "name": "不完整",
+          "condition": "任务必填字段缺失",
+          "rule_ids": [
+            "R-TASK-COMPLETE"
+          ],
+          "exception_ids": [
+            "EX-TASK-INCOMPLETE"
+          ],
+          "evidence_ids": [
+            "EV-001"
+          ],
+          "question_ids": []
+        },
+        {
+          "flow_id": "FLOW-007",
+          "source": "ND-MANUAL-HANDLE",
+          "target": "ND-END",
+          "name": "转人工后结束",
+          "condition": "",
+          "rule_ids": [],
+          "exception_ids": [
+            "EX-TASK-INCOMPLETE"
+          ],
+          "evidence_ids": [
+            "EV-001"
+          ],
+          "question_ids": []
+        }
+      ],
+      "message_flows": [
+        {
+          "message_flow_id": "MSG-TASK-IMPORT",
+          "source": "PART-SAP-OA",
+          "target": "ND-IMPORT-TASK",
+          "name": "工单消息",
+          "interface_id": "IF-TASK-IMPORT",
+          "evidence_ids": [
+            "EV-001"
+          ],
+          "question_ids": []
+        }
+      ],
+      "exceptions": [
+        {
+          "exception_id": "EX-TASK-INCOMPLETE",
+          "trigger_node_id": "ND-IMPORT-TASK",
+          "condition": "任务必填字段缺失",
+          "handling": "记录错误并转人工处理",
+          "result_state": "导入失败",
+          "recoverable": true,
+          "audit_required": true,
+          "path_flow_ids": [
+            "FLOW-006",
+            "FLOW-007"
+          ],
+          "evidence_ids": [
+            "EV-001"
+          ],
+          "question_ids": []
+        }
+      ]
+    }
+  ],
+  "entities": [
+    {
+      "entity_id": "ENT-TEST-TASK",
+      "name": "工单",
+      "class_name": "WorkOrder",
+      "parent_entity_id": "Thing",
+      "definition": "承载一次业务处理要求的工单对象",
+      "synonyms": [
+        "任务单"
+      ],
+      "identifier": "task_id",
+      "stateful": true,
+      "core": true,
+      "lifecycle": "导入、执行、完成或失败",
+      "process_ids": [
+        "PROC-RESULT-PREP"
+      ],
+      "node_ids": [
+        "ND-START",
+        "ND-IMPORT-TASK",
+        "GW-TASK-COMPLETE",
+        "ND-MANUAL-HANDLE"
+      ],
+      "evidence_ids": [
+        "EV-001"
+      ],
+      "question_ids": [],
+      "attributes": [
+        {
+          "field_id": "FIELD-TASK-ID",
+          "name": "task_id",
+          "label": "任务编号",
+          "datatype": "string",
+          "required": true,
+          "description": "工单唯一编号",
+          "constraint": "唯一",
+          "evidence_ids": [
+            "EV-001"
+          ]
+        }
+      ]
+    },
+    {
+      "entity_id": "ENT-TEST-RESULT",
+      "name": "处理结果",
+      "class_name": "ProcessResult",
+      "parent_entity_id": "Thing",
+      "definition": "工单产生并用于结果数据准备的结果对象",
+      "synonyms": [
+        "结果记录"
+      ],
+      "identifier": "result_id",
+      "stateful": true,
+      "core": true,
+      "lifecycle": "产生、标准化、人工确认",
+      "process_ids": [
+        "PROC-RESULT-PREP"
+      ],
+      "node_ids": [
+        "ND-PREPARE-RESULT",
+        "ND-HUMAN-CONFIRM",
+        "ND-END"
+      ],
+      "evidence_ids": [
+        "EV-001"
+      ],
+      "question_ids": [
+        "Q-RESULT-FIELDS"
+      ],
+      "attributes": [
+        {
+          "field_id": "FIELD-RESULT-VALUE",
+          "name": "result_value",
+          "label": "结果值",
+          "datatype": "decimal",
+          "required": true,
+          "description": "标准化后的处理结果值",
+          "constraint": "按规则保留精度",
+          "evidence_ids": [
+            "EV-001"
+          ]
+        }
+      ]
+    }
+  ],
+  "relations": [
+    {
+      "relation_id": "REL-TASK-HAS-RESULT",
+      "name_en": "hasResult",
+      "name_cn": "产生处理结果",
+      "source_entity_id": "ENT-TEST-TASK",
+      "target_entity_id": "ENT-TEST-RESULT",
+      "type": "产生",
+      "cardinality": "1:N",
+      "required": false,
+      "description": "一个工单可以产生多个处理结果",
+      "process_ids": [
+        "PROC-RESULT-PREP"
+      ],
+      "node_ids": [
+        "ND-PREPARE-RESULT"
+      ],
+      "evidence_ids": [
+        "EV-001"
+      ],
+      "question_ids": []
+    }
+  ],
+  "states": [
+    {
+      "state_id": "ST-TASK-IMPORTED",
+      "entity_id": "ENT-TEST-TASK",
+      "from_state": "待导入",
+      "to_state": "已导入",
+      "trigger": "任务字段校验通过",
+      "node_id": "ND-IMPORT-TASK",
+      "actor": "ROLE-SYSTEM",
+      "guard_condition": "必填字段完整",
+      "guard_rule_ids": [
+        "R-TASK-COMPLETE"
+      ],
+      "exception_ids": [
+        "EX-TASK-INCOMPLETE"
+      ],
+      "rollback_state": "待导入",
+      "audit_required": true,
+      "evidence_ids": [
+        "EV-001"
+      ],
+      "question_ids": []
+    },
+    {
+      "state_id": "ST-RESULT-PREPARED",
+      "entity_id": "ENT-TEST-RESULT",
+      "from_state": "原始结果",
+      "to_state": "结果数据已准备",
+      "trigger": "结果标准化完成",
+      "node_id": "ND-PREPARE-RESULT",
+      "actor": "ROLE-SYSTEM",
+      "guard_condition": "结果计算无错误",
+      "guard_rule_ids": [
+        "R-RESULT-NORMALIZE"
+      ],
+      "exception_ids": [],
+      "rollback_state": "原始结果",
+      "audit_required": true,
+      "evidence_ids": [
+        "EV-001"
+      ],
+      "question_ids": [
+        "Q-RESULT-FIELDS"
+      ]
+    },
+    {
+      "state_id": "ST-RESULT-CONFIRMED",
+      "entity_id": "ENT-TEST-RESULT",
+      "from_state": "结果数据已准备",
+      "to_state": "人工已确认",
+      "trigger": "处理员确认",
+      "node_id": "ND-HUMAN-CONFIRM",
+      "actor": "ROLE-TESTER",
+      "guard_condition": "人工确认",
+      "guard_rule_ids": [],
+      "exception_ids": [],
+      "rollback_state": "结果数据已准备",
+      "audit_required": true,
+      "evidence_ids": [
+        "EV-001"
+      ],
+      "question_ids": []
+    }
+  ],
+  "rules": [
+    {
+      "rule_id": "R-TASK-COMPLETE",
+      "name": "任务完整性校验",
+      "type": "校验",
+      "capability_ids": [
+        "CAP-TASK-IMPORT"
+      ],
+      "process_ids": [
+        "PROC-RESULT-PREP"
+      ],
+      "node_ids": [
+        "ND-IMPORT-TASK",
+        "GW-TASK-COMPLETE"
+      ],
+      "entity_ids": [
+        "ENT-TEST-TASK"
+      ],
+      "configurable": true,
+      "dmn_candidate": true,
+      "trigger": "导入任务",
+      "inputs": [
+        {
+          "field": "任务必填字段",
+          "source": "外部任务",
+          "operator": "非空",
+          "value": "全部必填"
+        }
+      ],
+      "outputs": [
+        {
+          "field": "完整性结果",
+          "value": "通过/不通过",
+          "description": "控制流程分支"
+        }
+      ],
+      "logic": "IF 必填字段全部存在 THEN 通过 ELSE 不通过",
+      "exception_behavior": "转人工处理并记录审计",
+      "evidence_ids": [
+        "EV-001"
+      ],
+      "question_ids": []
+    },
+    {
+      "rule_id": "R-RESULT-NORMALIZE",
+      "name": "结果标准化",
+      "type": "计算",
+      "capability_ids": [
+        "CAP-RESULT-DATA-PREP"
+      ],
+      "process_ids": [
+        "PROC-RESULT-PREP"
+      ],
+      "node_ids": [
+        "ND-PREPARE-RESULT"
+      ],
+      "entity_ids": [
+        "ENT-TEST-RESULT"
+      ],
+      "configurable": true,
+      "dmn_candidate": true,
+      "trigger": "准备结果数据",
+      "inputs": [
+        "原始结果值"
+      ],
+      "outputs": [
+        "标准化结果值"
+      ],
+      "logic": "按业务配置执行换算、计算和修约",
+      "exception_behavior": "停止自动准备并提示人工处理",
+      "evidence_ids": [
+        "EV-001"
+      ],
+      "question_ids": [
+        "Q-RESULT-FIELDS"
+      ]
+    }
+  ],
+  "interfaces": [
+    {
+      "interface_id": "IF-TASK-IMPORT",
+      "name": "工单导入",
+      "external_system": "上游业务系统",
+      "direction": "入站",
+      "trigger": "外部系统产生工单",
+      "message_object": "工单",
+      "payload_fields": [
+        "任务编号",
+        "产品",
+        "批次"
+      ],
+      "frequency": "待确认",
+      "owner": "相应外部系统管理员",
+      "protocol_format": "待确认",
+      "failure_handling": "记录失败并人工重试",
+      "process_ids": [
+        "PROC-RESULT-PREP"
+      ],
+      "node_ids": [
+        "ND-START",
+        "ND-IMPORT-TASK"
+      ],
+      "evidence_ids": [
+        "EV-001"
+      ],
+      "question_ids": [
+        "Q-INTERFACE-CONTRACT"
+      ]
+    }
+  ],
+  "capabilities": [
+    {
+      "capability_id": "CAP-TASK-IMPORT",
+      "name": "工单导入",
+      "type": "集成能力",
+      "priority": "Must",
+      "phase": "一期",
+      "goal": "将外部工单转换为系统标准工单",
+      "role_ids": [
+        "ROLE-SYSTEM"
+      ],
+      "process_ids": [
+        "PROC-RESULT-PREP"
+      ],
+      "node_ids": [
+        "ND-IMPORT-TASK",
+        "GW-TASK-COMPLETE",
+        "ND-MANUAL-HANDLE"
+      ],
+      "entity_ids": [
+        "ENT-TEST-TASK"
+      ],
+      "rule_ids": [
+        "R-TASK-COMPLETE"
+      ],
+      "state_ids": [
+        "ST-TASK-IMPORTED"
+      ],
+      "interface_ids": [
+        "IF-TASK-IMPORT"
+      ],
+      "inputs": [
+        "外部工单"
+      ],
+      "outputs": [
+        "标准化工单"
+      ],
+      "normal_flow": [
+        "接收外部任务",
+        "校验必填字段",
+        "创建系统任务"
+      ],
+      "exception_flow": [
+        "字段缺失时记录错误并转人工处理"
+      ],
+      "permission_requirement": "系统接口账号执行，管理员查看失败记录",
+      "audit_requirement": "记录来源、时间、原始标识和处理结果",
+      "acceptance_criteria": [
+        "Given 外部任务字段完整",
+        "When 系统收到任务",
+        "Then 创建唯一的标准化工单"
+      ],
+      "out_of_scope": [
+        "外部系统接口程序实施责任"
+      ],
+      "evidence_ids": [
+        "EV-001"
+      ],
+      "question_ids": [
+        "Q-INTERFACE-CONTRACT"
+      ]
+    },
+    {
+      "capability_id": "CAP-RESULT-DATA-PREP",
+      "name": "半自动结果数据准备",
+      "type": "数据能力",
+      "priority": "Must",
+      "phase": "一期",
+      "goal": "准备供人工确认和应用的结果数据",
+      "role_ids": [
+        "ROLE-SYSTEM",
+        "ROLE-TESTER"
+      ],
+      "process_ids": [
+        "PROC-RESULT-PREP"
+      ],
+      "node_ids": [
+        "ND-PREPARE-RESULT",
+        "ND-HUMAN-CONFIRM"
+      ],
+      "entity_ids": [
+        "ENT-TEST-RESULT"
+      ],
+      "rule_ids": [
+        "R-RESULT-NORMALIZE"
+      ],
+      "state_ids": [
+        "ST-RESULT-PREPARED",
+        "ST-RESULT-CONFIRMED"
+      ],
+      "interface_ids": [],
+      "inputs": [
+        "处理结果"
+      ],
+      "outputs": [
+        "人工已确认的结果数据集"
+      ],
+      "normal_flow": [
+        "系统标准化结果数据",
+        "系统形成结果数据集",
+        "处理员人工确认"
+      ],
+      "exception_flow": [
+        "计算失败时停止准备并提示人工处理"
+      ],
+      "permission_requirement": "处理员只能确认授权范围内的数据",
+      "audit_requirement": "记录系统计算和人工确认",
+      "acceptance_criteria": [
+        "Given 处理结果满足准备条件",
+        "When 系统执行结果标准化",
+        "Then 形成待人工确认的结果数据集",
+        "And 不自动生成最终结果报告"
+      ],
+      "out_of_scope": [
+        "一期自动生成和签发最终结果报告"
+      ],
+      "evidence_ids": [
+        "EV-001"
+      ],
+      "question_ids": [
+        "Q-RESULT-FIELDS"
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "evidence_id": "EV-001",
+      "fact_id": "F-001",
+      "type": "项目范围确认",
+      "source": "业务方确认",
+      "date": "2026-07-29",
+      "provider": "项目负责人",
+      "summary": "一期由系统准备结果数据，人工确认和应用结果；不负责外部设备对接和全自动生成",
+      "confidence": "已确认",
+      "scenario_ids": [
+        "SC-RESULT-PREP"
+      ],
+      "process_ids": [
+        "PROC-RESULT-PREP"
+      ],
+      "node_ids": [
+        "ND-START",
+        "ND-IMPORT-TASK",
+        "GW-TASK-COMPLETE",
+        "ND-PREPARE-RESULT",
+        "ND-HUMAN-CONFIRM",
+        "ND-MANUAL-HANDLE",
+        "ND-END"
+      ],
+      "capability_ids": [
+        "CAP-RESULT-DATA-PREP"
+      ],
+      "rule_ids": []
+    }
+  ],
+  "questions": [
+    {
+      "question_id": "Q-RESULT-FIELDS",
+      "question": "一期结果数据集包含哪些字段及确认规则",
+      "category": "数据",
+      "blocking_level": "Medium",
+      "status": "Open",
+      "current_assumption": "先按现有人工确认字段准备数据",
+      "assumption_basis": "一期为半自动结果数据准备",
+      "mock_or_defer_strategy": "字段映射可配置，未确认字段不进入自动计算",
+      "owner": "业务负责人",
+      "due_date": "待定",
+      "scenario_ids": [
+        "SC-RESULT-PREP"
+      ],
+      "process_ids": [
+        "PROC-RESULT-PREP"
+      ],
+      "node_ids": [
+        "ND-PREPARE-RESULT",
+        "ND-HUMAN-CONFIRM"
+      ],
+      "capability_ids": [
+        "CAP-RESULT-DATA-PREP"
+      ],
+      "prd_ids": [],
+      "impact": [
+        "结果数据准备能力"
+      ],
+      "related_ids": [
+        "CAP-RESULT-DATA-PREP",
+        "R-RESULT-NORMALIZE"
+      ]
+    },
+    {
+      "question_id": "Q-INTERFACE-CONTRACT",
+      "question": "工单接口的协议、频率和完整字段是什么",
+      "category": "接口",
+      "blocking_level": "Medium",
+      "status": "Open",
+      "current_assumption": "一期保留可配置接口契约并支持人工重试",
+      "assumption_basis": "接口方式待后续调研确认",
+      "mock_or_defer_strategy": "使用受控样例消息联调，协议确认后替换适配层",
+      "owner": "外部系统管理员",
+      "due_date": "待定",
+      "scenario_ids": [
+        "SC-RESULT-PREP"
+      ],
+      "process_ids": [
+        "PROC-RESULT-PREP"
+      ],
+      "node_ids": [
+        "ND-START",
+        "ND-IMPORT-TASK"
+      ],
+      "capability_ids": [
+        "CAP-TASK-IMPORT"
+      ],
+      "prd_ids": [],
+      "impact": [
+        "工单导入能力"
+      ],
+      "related_ids": [
+        "CAP-TASK-IMPORT",
+        "IF-TASK-IMPORT"
+      ]
+    }
+  ],
+  "inferences": [],
+  "decisions": []
+}

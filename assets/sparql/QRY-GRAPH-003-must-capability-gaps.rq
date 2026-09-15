@@ -1,0 +1,18 @@
+PREFIX req: <https://openai.example/requirements-schema#>
+
+SELECT DISTINCT ?capability ?stableId ?gap
+WHERE {
+  ?capability a req:Capability ;
+              req:stableId ?stableId ;
+              req:priority "Must" .
+  {
+    FILTER NOT EXISTS { ?capability req:usedByNode ?node }
+    BIND("missing-node-usage" AS ?gap)
+  }
+  UNION
+  {
+    FILTER NOT EXISTS { ?capability req:acceptanceCriterion ?criterion }
+    BIND("missing-acceptance-criterion" AS ?gap)
+  }
+}
+ORDER BY ?stableId ?gap

@@ -1,0 +1,283 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:research-to-project-input:model-spec:v1",
+  "title": "Research to Project Input Canonical Model Spec",
+  "type": "object",
+  "required": [
+    "meta",
+    "scope",
+    "roles",
+    "scenarios",
+    "processes",
+    "entities",
+    "relations",
+    "states",
+    "rules",
+    "interfaces",
+    "capabilities",
+    "evidence",
+    "questions"
+  ],
+  "properties": {
+    "meta": {
+      "type": "object",
+      "required": [
+        "project_id",
+        "project_name",
+        "phase",
+        "model_version",
+        "baseline_id",
+        "review_status",
+        "ontology_iri",
+        "ontology_id"
+      ],
+      "properties": {
+        "project_id": { "$ref": "#/$defs/stableId" },
+        "project_name": { "type": "string", "minLength": 1 },
+        "phase": { "type": "string", "minLength": 1 },
+        "model_version": { "type": "string", "minLength": 1 },
+        "baseline_id": { "$ref": "#/$defs/stableId" },
+        "review_status": {
+          "enum": ["draft", "reviewed", "approved"]
+        },
+        "reviewer": { "type": "string" },
+        "review_date": { "type": "string", "format": "date" },
+        "review_files": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        },
+        "ontology_iri": { "type": "string", "minLength": 1 },
+        "ontology_id": { "$ref": "#/$defs/stableId" }
+      }
+    },
+    "scope": { "type": "object" },
+    "roles": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/role" }
+    },
+    "scenarios": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/scenario" }
+    },
+    "processes": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/process" },
+      "minItems": 1
+    },
+    "entities": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/entity" }
+    },
+    "relations": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/relation" }
+    },
+    "states": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/state" }
+    },
+    "rules": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/rule" }
+    },
+    "interfaces": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/interface" }
+    },
+    "capabilities": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/capability" }
+    },
+    "evidence": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/evidence" }
+    },
+    "questions": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/question" }
+    },
+    "inferences": { "type": "array" },
+    "decisions": { "type": "array" }
+  },
+  "additionalProperties": true,
+  "$defs": {
+    "stableId": {
+      "type": "string",
+      "pattern": "^[A-Za-z_][A-Za-z0-9_.-]*$"
+    },
+    "idArray": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/stableId" },
+      "uniqueItems": true
+    },
+    "role": {
+      "type": "object",
+      "required": ["role_id", "name"],
+      "properties": {
+        "role_id": { "$ref": "#/$defs/stableId" },
+        "name": { "type": "string", "minLength": 1 }
+      }
+    },
+    "scenario": {
+      "type": "object",
+      "required": ["scenario_id", "name", "process_ids"],
+      "properties": {
+        "scenario_id": { "$ref": "#/$defs/stableId" },
+        "name": { "type": "string", "minLength": 1 },
+        "process_ids": { "$ref": "#/$defs/idArray" }
+      }
+    },
+    "process": {
+      "type": "object",
+      "required": [
+        "process_id",
+        "name",
+        "trigger",
+        "end_result",
+        "participants",
+        "nodes",
+        "flows",
+        "exceptions"
+      ],
+      "properties": {
+        "process_id": { "$ref": "#/$defs/stableId" },
+        "name": { "type": "string", "minLength": 1 },
+        "trigger": { "type": "string", "minLength": 1 },
+        "end_result": { "type": "string", "minLength": 1 },
+        "participants": { "type": "array", "minItems": 1 },
+        "nodes": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/node" },
+          "minItems": 2
+        },
+        "flows": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/flow" },
+          "minItems": 1
+        },
+        "message_flows": { "type": "array" },
+        "exceptions": { "type": "array" }
+      }
+    },
+    "node": {
+      "type": "object",
+      "required": ["node_id", "name", "type"],
+      "properties": {
+        "node_id": { "$ref": "#/$defs/stableId" },
+        "name": { "type": "string", "minLength": 1 },
+        "type": {
+          "enum": [
+            "startEvent",
+            "endEvent",
+            "userTask",
+            "manualTask",
+            "serviceTask",
+            "scriptTask",
+            "businessRuleTask",
+            "receiveTask",
+            "sendTask",
+            "exclusiveGateway",
+            "inclusiveGateway",
+            "parallelGateway",
+            "intermediateCatchEvent",
+            "intermediateThrowEvent",
+            "boundaryErrorEvent",
+            "subProcess"
+          ]
+        }
+      }
+    },
+    "flow": {
+      "type": "object",
+      "required": ["flow_id", "source", "target"],
+      "properties": {
+        "flow_id": { "$ref": "#/$defs/stableId" },
+        "source": { "$ref": "#/$defs/stableId" },
+        "target": { "$ref": "#/$defs/stableId" }
+      }
+    },
+    "entity": {
+      "type": "object",
+      "required": ["entity_id", "name", "class_name", "definition", "attributes"],
+      "properties": {
+        "entity_id": { "$ref": "#/$defs/stableId" },
+        "name": { "type": "string", "minLength": 1 },
+        "class_name": { "type": "string", "minLength": 1 },
+        "definition": { "type": "string", "minLength": 1 },
+        "attributes": { "type": "array" }
+      }
+    },
+    "relation": {
+      "type": "object",
+      "required": [
+        "relation_id",
+        "name_en",
+        "name_cn",
+        "source_entity_id",
+        "target_entity_id",
+        "cardinality"
+      ],
+      "properties": {
+        "relation_id": { "$ref": "#/$defs/stableId" },
+        "source_entity_id": { "$ref": "#/$defs/stableId" },
+        "target_entity_id": { "$ref": "#/$defs/stableId" }
+      }
+    },
+    "state": {
+      "type": "object",
+      "required": ["state_id", "entity_id", "from_state", "to_state", "trigger", "node_id"],
+      "properties": {
+        "state_id": { "$ref": "#/$defs/stableId" },
+        "entity_id": { "$ref": "#/$defs/stableId" },
+        "node_id": { "$ref": "#/$defs/stableId" }
+      }
+    },
+    "rule": {
+      "type": "object",
+      "required": ["rule_id", "name", "type", "trigger", "inputs", "outputs", "logic"],
+      "properties": {
+        "rule_id": { "$ref": "#/$defs/stableId" }
+      }
+    },
+    "interface": {
+      "type": "object",
+      "required": [
+        "interface_id",
+        "name",
+        "external_system",
+        "direction",
+        "trigger",
+        "message_object",
+        "owner",
+        "failure_handling"
+      ],
+      "properties": {
+        "interface_id": { "$ref": "#/$defs/stableId" }
+      }
+    },
+    "capability": {
+      "type": "object",
+      "required": ["capability_id", "name", "type", "priority", "goal"],
+      "properties": {
+        "capability_id": { "$ref": "#/$defs/stableId" },
+        "priority": { "enum": ["Must", "Should", "Could"] }
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "required": ["evidence_id", "type", "source", "summary", "confidence"],
+      "properties": {
+        "evidence_id": { "$ref": "#/$defs/stableId" }
+      }
+    },
+    "question": {
+      "type": "object",
+      "required": ["question_id", "question", "category", "blocking_level", "status"],
+      "properties": {
+        "question_id": { "$ref": "#/$defs/stableId" },
+        "blocking_level": { "enum": ["High", "Medium", "Low"] }
+      }
+    }
+  }
+}

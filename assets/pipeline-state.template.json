@@ -1,0 +1,27 @@
+{
+  "schema_version": "2.0.0",
+  "pipeline_id": "research-to-project-input",
+  "pipeline_definition_version": "2.0.0",
+  "current_stage": "initialized",
+  "project_root": ".",
+  "runner_script": "",
+  "created_at": "",
+  "updated_at": "",
+  "research_files": [],
+  "artifacts": {
+    "modeling_review": [],
+    "model_spec": [],
+    "requirements_graph": [],
+    "graph_contracts": [],
+    "graph_validation": [],
+    "bpmn": [],
+    "owl": [],
+    "development_input": [],
+    "baseline_manifest": []
+  },
+  "approvals": {
+    "modeling": null,
+    "models": null
+  },
+  "events": []
+}

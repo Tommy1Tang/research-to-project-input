@@ -1,0 +1,17 @@
+owlrl-7.6.2.dist-info/INSTALLER,sha256=zuuue4knoyJ-UwPPXg8fezS7VCrXJQrAP7zeNuwvFQg,4
+owlrl-7.6.2.dist-info/LICENSE.txt,sha256=QxTwWq16IX55LTEK8bQ4HRMuA9L4I8Kbt6sPh8aEklc,1754
+owlrl-7.6.2.dist-info/METADATA,sha256=4EZN-MHTBgB2FjT9TYab58HuES6a6jVnB2LDZZmNovg,4583
+owlrl-7.6.2.dist-info/RECORD,,
+owlrl-7.6.2.dist-info/WHEEL,sha256=IYZQI976HJqqOpQU6PHkJ8fb3tMNBFjg-Cn-pwAbaFM,88
+owlrl/AxiomaticTriples.py,sha256=3OpsWGpdMFzp6ZwbSDLRdc-S5hZkzCMg_SXxJrtWLK0,27001
+owlrl/Closure.py,sha256=EDNs7Va_Dt0QwwFfgCZSrcMrGCzCWy2OEbgB6zif_oE,13326
+owlrl/CombinedClosure.py,sha256=7W6IgB1PVAPczneEK7PJyFD1heW2vgnFUV4qpG743RY,7342
+owlrl/DatatypeHandling.py,sha256=wgYMXTG6ZACRPCm6A1McnyXKzEZW1sANEFKe2ET1brE,24091
+owlrl/Namespaces.py,sha256=2AHiRCjxdjK1v-6VpNc4vc2e8GEl9AoMGWXxw8BfWaA,131
+owlrl/OWLRL.py,sha256=kAFTFrsFG6A14eWE88koqzh1KrARuVqNLAJUoZFpJP0,45008
+owlrl/OWLRLExtras.py,sha256=wNmkeN2MgYcSAbpeBQHVTnGaXsSXhrNvfILhq7auaYQ,16038
+owlrl/RDFSClosure.py,sha256=TLyEsTHgfLKiwJG7cizb9rB33-e3PwYKXuQeunR9wLM,8256
+owlrl/RestrictedDatatype.py,sha256=k0rMXuamCEP1C6aJDkdpsbe8ObxYkueFz50RH43lZC4,20913
+owlrl/XsdDatatypes.py,sha256=eeOwJ5wvQMxS-wF9Eo3l6tLQHcNcrr73-aHZbdPkHkY,3908
+owlrl/__init__.py,sha256=7X3DQQ0mhZYV3bU30E5lwERwqQprhoTajBrgnUQHtS0,26858
+owlrl/graph_abstraction.py,sha256=QWuQ67Xt51MK9iPCeKFf79TLIxjjRc-e19TX8ViOJKE,23189

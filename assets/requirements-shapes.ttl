@@ -1,0 +1,151 @@
+@prefix req: <https://openai.example/requirements-schema#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+req:TraceableElementShape
+    a sh:NodeShape ;
+    sh:targetClass req:Scenario, req:Process, req:ProcessNode, req:SequenceFlow,
+        req:Exception, req:Role, req:Entity, req:EntityRelation,
+        req:StateTransition, req:BusinessRule, req:Interface,
+        req:Capability, req:Evidence, req:Question ;
+    sh:property [
+        sh:path req:stableId ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:minLength 1 ;
+        sh:message "Every traceable element must have exactly one non-empty stableId."
+    ] .
+
+req:EvidenceOrQuestionShape
+    a sh:NodeShape ;
+    sh:targetClass req:ProcessNode, req:Entity, req:EntityRelation,
+        req:StateTransition, req:BusinessRule, req:Interface, req:Capability ;
+    sh:or (
+        [ sh:property [ sh:path req:supportedBy ; sh:minCount 1 ] ]
+        [ sh:property [ sh:path req:hasQuestion ; sh:minCount 1 ] ]
+    ) ;
+    sh:message "Critical graph elements require evidence or an open question." .
+
+req:ProcessShape
+    a sh:NodeShape ;
+    sh:targetClass req:Process ;
+    sh:property [
+        sh:path req:hasNode ;
+        sh:minCount 2 ;
+        sh:class req:ProcessNode
+    ] ;
+    sh:property [
+        sh:path req:hasStartNode ;
+        sh:minCount 1 ;
+        sh:class req:ProcessNode
+    ] ;
+    sh:property [
+        sh:path req:hasEndNode ;
+        sh:minCount 1 ;
+        sh:class req:ProcessNode
+    ] .
+
+req:ProcessNodeShape
+    a sh:NodeShape ;
+    sh:targetClass req:ProcessNode ;
+    sh:property [
+        sh:path req:belongsToProcess ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:class req:Process
+    ] ;
+    sh:property [
+        sh:path req:nodeType ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string
+    ] .
+
+req:SequenceFlowShape
+    a sh:NodeShape ;
+    sh:targetClass req:SequenceFlow ;
+    sh:property [
+        sh:path req:sourceNode ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:class req:ProcessNode
+    ] ;
+    sh:property [
+        sh:path req:targetNode ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:class req:ProcessNode
+    ] .
+
+req:StateTransitionShape
+    a sh:NodeShape ;
+    sh:targetClass req:StateTransition ;
+    sh:property [
+        sh:path req:transitionOfEntity ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:class req:Entity
+    ] ;
+    sh:property [ sh:path req:sourceState ; sh:minCount 1 ; sh:maxCount 1 ] ;
+    sh:property [ sh:path req:targetState ; sh:minCount 1 ; sh:maxCount 1 ] ;
+    sh:property [ sh:path req:trigger ; sh:minCount 1 ; sh:minLength 1 ] .
+
+req:StatefulEntityShape
+    a sh:NodeShape ;
+    sh:targetClass req:Entity ;
+    sh:sparql [
+        sh:message "A stateful entity requires a state transition or an explicit question." ;
+        sh:select """
+            SELECT $this
+            WHERE {
+                $this req:stateful true .
+                FILTER NOT EXISTS { $this req:hasStateTransition ?transition }
+                FILTER NOT EXISTS { $this req:hasQuestion ?question }
+            }
+        """
+    ] .
+
+req:BusinessRuleShape
+    a sh:NodeShape ;
+    sh:targetClass req:BusinessRule ;
+    sh:property [ sh:path req:trigger ; sh:minCount 1 ; sh:minLength 1 ] ;
+    sh:property [ sh:path req:inputValue ; sh:minCount 1 ] ;
+    sh:property [ sh:path req:outputValue ; sh:minCount 1 ] ;
+    sh:or (
+        [ sh:property [ sh:path req:hasProcess ; sh:minCount 1 ] ]
+        [ sh:property [ sh:path req:touchesEntity ; sh:minCount 1 ] ]
+    ) .
+
+req:MustCapabilityShape
+    a sh:NodeShape ;
+    sh:targetClass req:Capability ;
+    sh:sparql [
+        sh:message "A Must capability requires a process node and an acceptance criterion." ;
+        sh:select """
+            SELECT $this
+            WHERE {
+                $this req:priority "Must" .
+                {
+                    FILTER NOT EXISTS { $this req:usedByNode ?node }
+                }
+                UNION
+                {
+                    FILTER NOT EXISTS { $this req:acceptanceCriterion ?criterion }
+                }
+            }
+        """
+    ] .
+
+req:EntityRelationShape
+    a sh:NodeShape ;
+    sh:targetClass req:EntityRelation ;
+    sh:property [ sh:path req:sourceEntity ; sh:minCount 1 ; sh:maxCount 1 ; sh:class req:Entity ] ;
+    sh:property [ sh:path req:targetEntity ; sh:minCount 1 ; sh:maxCount 1 ; sh:class req:Entity ] ;
+    sh:property [ sh:path req:cardinality ; sh:minCount 1 ; sh:minLength 1 ] .
+
+req:QuestionShape
+    a sh:NodeShape ;
+    sh:targetClass req:Question ;
+    sh:property [ sh:path req:blockingLevel ; sh:minCount 1 ; sh:maxCount 1 ] ;
+    sh:property [ sh:path req:questionStatus ; sh:minCount 1 ; sh:maxCount 1 ] .

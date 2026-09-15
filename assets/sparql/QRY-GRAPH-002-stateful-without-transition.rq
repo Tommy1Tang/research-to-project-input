@@ -1,0 +1,11 @@
+PREFIX req: <https://openai.example/requirements-schema#>
+
+SELECT ?entity ?stableId
+WHERE {
+  ?entity a req:Entity ;
+          req:stableId ?stableId ;
+          req:stateful true .
+  FILTER NOT EXISTS { ?entity req:hasStateTransition ?transition }
+  FILTER NOT EXISTS { ?entity req:hasQuestion ?question }
+}
+ORDER BY ?stableId

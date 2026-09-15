@@ -1,0 +1,295 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rdf:RDF
+  xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+  xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
+  xmlns:owl="http://www.w3.org/2002/07/owl#"
+  xmlns:xsd="http://www.w3.org/2001/XMLSchema#"
+  xmlns:pipe="https://openai.example/requirements-pipeline#">
+  <owl:Ontology rdf:about="https://openai.example/requirements-pipeline">
+    <owl:versionInfo>2.0.0</owl:versionInfo>
+    <rdfs:label xml:lang="zh-CN">调研到开发输入流水线本体</rdfs:label>
+    <rdfs:comment xml:lang="zh-CN">描述从调研材料、初版中文 Markdown 业务模型、统一需求图、BPMN 与 OWL 正式模型到 00-07 开发输入的受控流水线。</rdfs:comment>
+  </owl:Ontology>
+
+  <!-- W3C 标准谓词保持标准 URI，仅补充中文显示标签。 -->
+  <rdf:Description rdf:about="http://www.w3.org/1999/02/22-rdf-syntax-ns#type">
+    <rdfs:label xml:lang="zh-CN">类型</rdfs:label>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.w3.org/2000/01/rdf-schema#subClassOf">
+    <rdfs:label xml:lang="zh-CN">子类关系</rdfs:label>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.w3.org/2000/01/rdf-schema#domain">
+    <rdfs:label xml:lang="zh-CN">定义域</rdfs:label>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.w3.org/2000/01/rdf-schema#range">
+    <rdfs:label xml:lang="zh-CN">值域</rdfs:label>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.w3.org/2000/01/rdf-schema#label">
+    <rdfs:label xml:lang="zh-CN">显示名称</rdfs:label>
+  </rdf:Description>
+
+  <owl:Class rdf:about="https://openai.example/requirements-pipeline#流水线阶段">
+    <rdfs:label xml:lang="zh-CN">流水线阶段</rdfs:label>
+  </owl:Class>
+  <owl:Class rdf:about="https://openai.example/requirements-pipeline#流水线动作">
+    <rdfs:label xml:lang="zh-CN">流水线动作</rdfs:label>
+  </owl:Class>
+  <owl:Class rdf:about="https://openai.example/requirements-pipeline#流水线产物">
+    <rdfs:label xml:lang="zh-CN">流水线产物</rdfs:label>
+  </owl:Class>
+  <owl:Class rdf:about="https://openai.example/requirements-pipeline#人工审批门禁">
+    <rdfs:subClassOf rdf:resource="https://openai.example/requirements-pipeline#流水线动作"/>
+    <rdfs:label xml:lang="zh-CN">人工审批门禁</rdfs:label>
+  </owl:Class>
+  <owl:Class rdf:about="https://openai.example/requirements-pipeline#人工审批">
+    <rdfs:label xml:lang="zh-CN">人工审批</rdfs:label>
+  </owl:Class>
+  <owl:Class rdf:about="https://openai.example/requirements-pipeline#校验结果">
+    <rdfs:label xml:lang="zh-CN">校验结果</rdfs:label>
+  </owl:Class>
+
+  <owl:ObjectProperty rdf:about="https://openai.example/requirements-pipeline#下一阶段">
+    <rdfs:label xml:lang="zh-CN">下一阶段</rdfs:label>
+    <pipe:稳定标识>nextStage</pipe:稳定标识>
+    <rdfs:domain rdf:resource="https://openai.example/requirements-pipeline#流水线阶段"/>
+    <rdfs:range rdf:resource="https://openai.example/requirements-pipeline#流水线阶段"/>
+  </owl:ObjectProperty>
+  <owl:ObjectProperty rdf:about="https://openai.example/requirements-pipeline#由动作进入">
+    <rdfs:label xml:lang="zh-CN">由动作进入</rdfs:label>
+    <pipe:稳定标识>enteredBy</pipe:稳定标识>
+    <rdfs:domain rdf:resource="https://openai.example/requirements-pipeline#流水线阶段"/>
+    <rdfs:range rdf:resource="https://openai.example/requirements-pipeline#流水线动作"/>
+  </owl:ObjectProperty>
+  <owl:ObjectProperty rdf:about="https://openai.example/requirements-pipeline#需要产物">
+    <rdfs:label xml:lang="zh-CN">需要产物</rdfs:label>
+    <pipe:稳定标识>requiresArtifact</pipe:稳定标识>
+    <rdfs:domain rdf:resource="https://openai.example/requirements-pipeline#流水线动作"/>
+    <rdfs:range rdf:resource="https://openai.example/requirements-pipeline#流水线产物"/>
+  </owl:ObjectProperty>
+  <owl:ObjectProperty rdf:about="https://openai.example/requirements-pipeline#产生产物">
+    <rdfs:label xml:lang="zh-CN">产生产物</rdfs:label>
+    <pipe:稳定标识>producesArtifact</pipe:稳定标识>
+    <rdfs:domain rdf:resource="https://openai.example/requirements-pipeline#流水线动作"/>
+    <rdfs:range rdf:resource="https://openai.example/requirements-pipeline#流水线产物"/>
+  </owl:ObjectProperty>
+  <owl:ObjectProperty rdf:about="https://openai.example/requirements-pipeline#需要人工审批">
+    <rdfs:label xml:lang="zh-CN">需要人工审批</rdfs:label>
+    <pipe:稳定标识>requiresApproval</pipe:稳定标识>
+    <rdfs:domain rdf:resource="https://openai.example/requirements-pipeline#流水线动作"/>
+    <rdfs:range rdf:resource="https://openai.example/requirements-pipeline#人工审批"/>
+  </owl:ObjectProperty>
+
+  <owl:DatatypeProperty rdf:about="https://openai.example/requirements-pipeline#阶段序号">
+    <rdfs:label xml:lang="zh-CN">阶段序号</rdfs:label>
+    <pipe:稳定标识>stageIndex</pipe:稳定标识>
+    <rdfs:domain rdf:resource="https://openai.example/requirements-pipeline#流水线阶段"/>
+    <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#integer"/>
+  </owl:DatatypeProperty>
+  <owl:DatatypeProperty rdf:about="https://openai.example/requirements-pipeline#稳定标识">
+    <rdfs:label xml:lang="zh-CN">稳定标识</rdfs:label>
+    <pipe:稳定标识>stableId</pipe:稳定标识>
+    <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+  </owl:DatatypeProperty>
+
+  <pipe:流水线产物 rdf:about="https://openai.example/requirements-pipeline#原始调研材料">
+    <rdfs:label xml:lang="zh-CN">原始调研材料</rdfs:label>
+    <pipe:稳定标识>ResearchMaterial</pipe:稳定标识>
+  </pipe:流水线产物>
+  <pipe:流水线产物 rdf:about="https://openai.example/requirements-pipeline#初版业务模型文档">
+    <rdfs:label xml:lang="zh-CN">初版 Markdown 业务模型</rdfs:label>
+    <pipe:稳定标识>ModelingMarkdown</pipe:稳定标识>
+  </pipe:流水线产物>
+  <pipe:流水线产物 rdf:about="https://openai.example/requirements-pipeline#统一模型规范">
+    <rdfs:label xml:lang="zh-CN">统一模型规范</rdfs:label>
+    <pipe:稳定标识>CanonicalModelSpec</pipe:稳定标识>
+  </pipe:流水线产物>
+  <pipe:流水线产物 rdf:about="https://openai.example/requirements-pipeline#统一需求图">
+    <rdfs:label xml:lang="zh-CN">统一需求图</rdfs:label>
+    <pipe:稳定标识>UnifiedRequirementsGraph</pipe:稳定标识>
+  </pipe:流水线产物>
+  <pipe:流水线产物 rdf:about="https://openai.example/requirements-pipeline#需求图约束规则">
+    <rdfs:label xml:lang="zh-CN">需求图约束规则</rdfs:label>
+    <pipe:稳定标识>SHACLShapes</pipe:稳定标识>
+  </pipe:流水线产物>
+  <pipe:流水线产物 rdf:about="https://openai.example/requirements-pipeline#需求图查询集">
+    <rdfs:label xml:lang="zh-CN">需求图查询集</rdfs:label>
+    <pipe:稳定标识>SPARQLQuerySet</pipe:稳定标识>
+  </pipe:流水线产物>
+  <pipe:流水线产物 rdf:about="https://openai.example/requirements-pipeline#需求图验证报告">
+    <rdfs:label xml:lang="zh-CN">需求图验证报告</rdfs:label>
+    <pipe:稳定标识>GraphValidationReport</pipe:稳定标识>
+  </pipe:流水线产物>
+  <pipe:流水线产物 rdf:about="https://openai.example/requirements-pipeline#中文流程模型">
+    <rdfs:label xml:lang="zh-CN">BPMN 中文流程模型</rdfs:label>
+    <pipe:稳定标识>BPMNProjection</pipe:稳定标识>
+  </pipe:流水线产物>
+  <pipe:流水线产物 rdf:about="https://openai.example/requirements-pipeline#中文领域本体">
+    <rdfs:label xml:lang="zh-CN">OWL 中文领域本体</rdfs:label>
+    <pipe:稳定标识>OWLProjection</pipe:稳定标识>
+  </pipe:流水线产物>
+  <pipe:流水线产物 rdf:about="https://openai.example/requirements-pipeline#开发输入文档">
+    <rdfs:label xml:lang="zh-CN">00-07 开发输入文档</rdfs:label>
+    <pipe:稳定标识>DevelopmentInput00To07</pipe:稳定标识>
+  </pipe:流水线产物>
+  <pipe:流水线产物 rdf:about="https://openai.example/requirements-pipeline#开发基线清单">
+    <rdfs:label xml:lang="zh-CN">开发基线清单</rdfs:label>
+    <pipe:稳定标识>BaselineManifest</pipe:稳定标识>
+  </pipe:流水线产物>
+
+  <pipe:流水线动作 rdf:about="https://openai.example/requirements-pipeline#登记调研材料">
+    <rdfs:label xml:lang="zh-CN">登记并锁定调研材料</rdfs:label>
+    <pipe:稳定标识>register-research</pipe:稳定标识>
+    <pipe:产生产物 rdf:resource="https://openai.example/requirements-pipeline#原始调研材料"/>
+  </pipe:流水线动作>
+  <pipe:流水线动作 rdf:about="https://openai.example/requirements-pipeline#生成初版业务模型">
+    <rdfs:label xml:lang="zh-CN">生成初版 Markdown 业务模型</rdfs:label>
+    <pipe:稳定标识>scaffold-review</pipe:稳定标识>
+    <pipe:需要产物 rdf:resource="https://openai.example/requirements-pipeline#原始调研材料"/>
+    <pipe:产生产物 rdf:resource="https://openai.example/requirements-pipeline#初版业务模型文档"/>
+  </pipe:流水线动作>
+  <pipe:流水线动作 rdf:about="https://openai.example/requirements-pipeline#校验统一模型规范">
+    <rdfs:label xml:lang="zh-CN">编译并校验统一模型规范</rdfs:label>
+    <pipe:稳定标识>validate-spec</pipe:稳定标识>
+    <pipe:需要产物 rdf:resource="https://openai.example/requirements-pipeline#初版业务模型文档"/>
+    <pipe:产生产物 rdf:resource="https://openai.example/requirements-pipeline#统一模型规范"/>
+  </pipe:流水线动作>
+  <pipe:流水线动作 rdf:about="https://openai.example/requirements-pipeline#生成统一需求图">
+    <rdfs:label xml:lang="zh-CN">生成统一需求图及图约束</rdfs:label>
+    <pipe:稳定标识>generate-graph</pipe:稳定标识>
+    <pipe:需要产物 rdf:resource="https://openai.example/requirements-pipeline#统一模型规范"/>
+    <pipe:产生产物 rdf:resource="https://openai.example/requirements-pipeline#统一需求图"/>
+    <pipe:产生产物 rdf:resource="https://openai.example/requirements-pipeline#需求图约束规则"/>
+    <pipe:产生产物 rdf:resource="https://openai.example/requirements-pipeline#需求图查询集"/>
+  </pipe:流水线动作>
+  <pipe:流水线动作 rdf:about="https://openai.example/requirements-pipeline#验证统一需求图">
+    <rdfs:label xml:lang="zh-CN">执行需求图语义验证</rdfs:label>
+    <pipe:稳定标识>validate-graph</pipe:稳定标识>
+    <pipe:需要产物 rdf:resource="https://openai.example/requirements-pipeline#统一需求图"/>
+    <pipe:需要产物 rdf:resource="https://openai.example/requirements-pipeline#需求图约束规则"/>
+    <pipe:需要产物 rdf:resource="https://openai.example/requirements-pipeline#需求图查询集"/>
+    <pipe:产生产物 rdf:resource="https://openai.example/requirements-pipeline#需求图验证报告"/>
+  </pipe:流水线动作>
+  <pipe:流水线动作 rdf:about="https://openai.example/requirements-pipeline#生成候选正式模型">
+    <rdfs:label xml:lang="zh-CN">生成 BPMN 与 OWL 中文模型</rdfs:label>
+    <pipe:稳定标识>generate-models</pipe:稳定标识>
+    <pipe:需要产物 rdf:resource="https://openai.example/requirements-pipeline#统一模型规范"/>
+    <pipe:需要产物 rdf:resource="https://openai.example/requirements-pipeline#需求图验证报告"/>
+    <pipe:产生产物 rdf:resource="https://openai.example/requirements-pipeline#中文流程模型"/>
+    <pipe:产生产物 rdf:resource="https://openai.example/requirements-pipeline#中文领域本体"/>
+  </pipe:流水线动作>
+  <pipe:流水线动作 rdf:about="https://openai.example/requirements-pipeline#生成开发输入">
+    <rdfs:label xml:lang="zh-CN">生成 00-07 开发输入文档</rdfs:label>
+    <pipe:稳定标识>generate-input</pipe:稳定标识>
+    <pipe:需要产物 rdf:resource="https://openai.example/requirements-pipeline#统一模型规范"/>
+    <pipe:需要产物 rdf:resource="https://openai.example/requirements-pipeline#统一需求图"/>
+    <pipe:需要产物 rdf:resource="https://openai.example/requirements-pipeline#中文流程模型"/>
+    <pipe:需要产物 rdf:resource="https://openai.example/requirements-pipeline#中文领域本体"/>
+    <pipe:产生产物 rdf:resource="https://openai.example/requirements-pipeline#开发输入文档"/>
+  </pipe:流水线动作>
+  <pipe:流水线动作 rdf:about="https://openai.example/requirements-pipeline#锁定开发基线">
+    <rdfs:label xml:lang="zh-CN">锁定开发基线并执行全链路校验</rdfs:label>
+    <pipe:稳定标识>finalize</pipe:稳定标识>
+    <pipe:需要产物 rdf:resource="https://openai.example/requirements-pipeline#开发输入文档"/>
+    <pipe:产生产物 rdf:resource="https://openai.example/requirements-pipeline#开发基线清单"/>
+  </pipe:流水线动作>
+
+  <pipe:流水线阶段 rdf:about="https://openai.example/requirements-pipeline#流水线已初始化">
+    <rdfs:label xml:lang="zh-CN">流水线已初始化</rdfs:label>
+    <pipe:稳定标识>initialized</pipe:稳定标识>
+    <pipe:阶段序号 rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">0</pipe:阶段序号>
+    <pipe:下一阶段 rdf:resource="https://openai.example/requirements-pipeline#调研材料已登记"/>
+  </pipe:流水线阶段>
+  <pipe:流水线阶段 rdf:about="https://openai.example/requirements-pipeline#调研材料已登记">
+    <rdfs:label xml:lang="zh-CN">调研材料已登记</rdfs:label>
+    <pipe:稳定标识>research_registered</pipe:稳定标识>
+    <pipe:阶段序号 rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">1</pipe:阶段序号>
+    <pipe:由动作进入 rdf:resource="https://openai.example/requirements-pipeline#登记调研材料"/>
+    <pipe:下一阶段 rdf:resource="https://openai.example/requirements-pipeline#初版业务模型已生成"/>
+  </pipe:流水线阶段>
+  <pipe:流水线阶段 rdf:about="https://openai.example/requirements-pipeline#初版业务模型已生成">
+    <rdfs:label xml:lang="zh-CN">初版 Markdown 业务模型已生成</rdfs:label>
+    <pipe:稳定标识>modeling_scaffolded</pipe:稳定标识>
+    <pipe:阶段序号 rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">2</pipe:阶段序号>
+    <pipe:由动作进入 rdf:resource="https://openai.example/requirements-pipeline#生成初版业务模型"/>
+    <pipe:下一阶段 rdf:resource="https://openai.example/requirements-pipeline#初版业务模型审核通过"/>
+  </pipe:流水线阶段>
+  <pipe:流水线阶段 rdf:about="https://openai.example/requirements-pipeline#初版业务模型审核通过">
+    <rdfs:label xml:lang="zh-CN">初版 Markdown 业务模型审核通过</rdfs:label>
+    <pipe:稳定标识>modeling_review_approved</pipe:稳定标识>
+    <pipe:阶段序号 rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">3</pipe:阶段序号>
+    <pipe:由动作进入 rdf:resource="https://openai.example/requirements-pipeline#审核初版业务模型"/>
+    <pipe:下一阶段 rdf:resource="https://openai.example/requirements-pipeline#统一模型规范已审核"/>
+  </pipe:流水线阶段>
+  <pipe:流水线阶段 rdf:about="https://openai.example/requirements-pipeline#统一模型规范已审核">
+    <rdfs:label xml:lang="zh-CN">统一模型规范已审核</rdfs:label>
+    <pipe:稳定标识>spec_reviewed</pipe:稳定标识>
+    <pipe:阶段序号 rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">4</pipe:阶段序号>
+    <pipe:由动作进入 rdf:resource="https://openai.example/requirements-pipeline#校验统一模型规范"/>
+    <pipe:下一阶段 rdf:resource="https://openai.example/requirements-pipeline#统一需求图已生成"/>
+  </pipe:流水线阶段>
+  <pipe:流水线阶段 rdf:about="https://openai.example/requirements-pipeline#统一需求图已生成">
+    <rdfs:label xml:lang="zh-CN">统一需求图已生成</rdfs:label>
+    <pipe:稳定标识>graph_generated</pipe:稳定标识>
+    <pipe:阶段序号 rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">5</pipe:阶段序号>
+    <pipe:由动作进入 rdf:resource="https://openai.example/requirements-pipeline#生成统一需求图"/>
+    <pipe:下一阶段 rdf:resource="https://openai.example/requirements-pipeline#统一需求图已验证"/>
+  </pipe:流水线阶段>
+  <pipe:流水线阶段 rdf:about="https://openai.example/requirements-pipeline#统一需求图已验证">
+    <rdfs:label xml:lang="zh-CN">统一需求图已验证</rdfs:label>
+    <pipe:稳定标识>graph_validated</pipe:稳定标识>
+    <pipe:阶段序号 rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">6</pipe:阶段序号>
+    <pipe:由动作进入 rdf:resource="https://openai.example/requirements-pipeline#验证统一需求图"/>
+    <pipe:下一阶段 rdf:resource="https://openai.example/requirements-pipeline#候选正式模型已生成"/>
+  </pipe:流水线阶段>
+  <pipe:流水线阶段 rdf:about="https://openai.example/requirements-pipeline#候选正式模型已生成">
+    <rdfs:label xml:lang="zh-CN">BPMN 与 OWL 候选模型已生成</rdfs:label>
+    <pipe:稳定标识>models_generated</pipe:稳定标识>
+    <pipe:阶段序号 rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">7</pipe:阶段序号>
+    <pipe:由动作进入 rdf:resource="https://openai.example/requirements-pipeline#生成候选正式模型"/>
+    <pipe:下一阶段 rdf:resource="https://openai.example/requirements-pipeline#正式模型审核通过"/>
+  </pipe:流水线阶段>
+  <pipe:流水线阶段 rdf:about="https://openai.example/requirements-pipeline#正式模型审核通过">
+    <rdfs:label xml:lang="zh-CN">统一需求图、BPMN 与 OWL 正式模型审核通过</rdfs:label>
+    <pipe:稳定标识>models_approved</pipe:稳定标识>
+    <pipe:阶段序号 rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">8</pipe:阶段序号>
+    <pipe:由动作进入 rdf:resource="https://openai.example/requirements-pipeline#审核正式模型"/>
+    <pipe:下一阶段 rdf:resource="https://openai.example/requirements-pipeline#开发输入已生成"/>
+  </pipe:流水线阶段>
+  <pipe:流水线阶段 rdf:about="https://openai.example/requirements-pipeline#开发输入已生成">
+    <rdfs:label xml:lang="zh-CN">00-07 开发输入文档已生成</rdfs:label>
+    <pipe:稳定标识>development_input_generated</pipe:稳定标识>
+    <pipe:阶段序号 rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">9</pipe:阶段序号>
+    <pipe:由动作进入 rdf:resource="https://openai.example/requirements-pipeline#生成开发输入"/>
+    <pipe:下一阶段 rdf:resource="https://openai.example/requirements-pipeline#开发基线已就绪"/>
+  </pipe:流水线阶段>
+  <pipe:流水线阶段 rdf:about="https://openai.example/requirements-pipeline#开发基线已就绪">
+    <rdfs:label xml:lang="zh-CN">开发基线已就绪</rdfs:label>
+    <pipe:稳定标识>development_ready</pipe:稳定标识>
+    <pipe:阶段序号 rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">10</pipe:阶段序号>
+    <pipe:由动作进入 rdf:resource="https://openai.example/requirements-pipeline#锁定开发基线"/>
+  </pipe:流水线阶段>
+
+  <pipe:人工审批门禁 rdf:about="https://openai.example/requirements-pipeline#审核初版业务模型">
+    <rdfs:label xml:lang="zh-CN">审核初版 Markdown 业务模型</rdfs:label>
+    <pipe:稳定标识>approve-modeling</pipe:稳定标识>
+    <pipe:需要产物 rdf:resource="https://openai.example/requirements-pipeline#初版业务模型文档"/>
+    <pipe:需要人工审批 rdf:resource="https://openai.example/requirements-pipeline#业务建模人工审批记录"/>
+  </pipe:人工审批门禁>
+  <pipe:人工审批门禁 rdf:about="https://openai.example/requirements-pipeline#审核正式模型">
+    <rdfs:label xml:lang="zh-CN">审核统一需求图、BPMN 与 OWL 正式模型</rdfs:label>
+    <pipe:稳定标识>approve-models</pipe:稳定标识>
+    <pipe:需要产物 rdf:resource="https://openai.example/requirements-pipeline#统一需求图"/>
+    <pipe:需要产物 rdf:resource="https://openai.example/requirements-pipeline#需求图验证报告"/>
+    <pipe:需要产物 rdf:resource="https://openai.example/requirements-pipeline#中文流程模型"/>
+    <pipe:需要产物 rdf:resource="https://openai.example/requirements-pipeline#中文领域本体"/>
+    <pipe:需要人工审批 rdf:resource="https://openai.example/requirements-pipeline#正式模型人工审批记录"/>
+  </pipe:人工审批门禁>
+  <pipe:人工审批 rdf:about="https://openai.example/requirements-pipeline#业务建模人工审批记录">
+    <rdfs:label xml:lang="zh-CN">业务建模人工审批</rdfs:label>
+    <pipe:稳定标识>ModelingHumanApproval</pipe:稳定标识>
+  </pipe:人工审批>
+  <pipe:人工审批 rdf:about="https://openai.example/requirements-pipeline#正式模型人工审批记录">
+    <rdfs:label xml:lang="zh-CN">正式模型人工审批</rdfs:label>
+    <pipe:稳定标识>ModelHumanApproval</pipe:稳定标识>
+  </pipe:人工审批>
+</rdf:RDF>

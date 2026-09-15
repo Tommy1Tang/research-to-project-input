@@ -1,0 +1,22 @@
+PREFIX req: <https://openai.example/requirements-schema#>
+
+SELECT ?processId ?nodeId ?capabilityId ?entityId ?ruleId
+WHERE {
+  ?node a req:ProcessNode ;
+        req:stableId ?nodeId ;
+        req:belongsToProcess ?process .
+  ?process req:stableId ?processId .
+  OPTIONAL {
+    ?node req:usesCapability ?capability .
+    ?capability req:stableId ?capabilityId .
+  }
+  OPTIONAL {
+    ?node req:touchesEntity ?entity .
+    ?entity req:stableId ?entityId .
+  }
+  OPTIONAL {
+    ?node req:governedByRule ?rule .
+    ?rule req:stableId ?ruleId .
+  }
+}
+ORDER BY ?processId ?nodeId ?capabilityId ?entityId ?ruleId
