@@ -1,185 +1,373 @@
 # Research to Project Input
 
-将业务调研材料转换为经过人工审核、模型校验和追溯验证的 AI 开发输入。
+**把业务调研材料，编译成经过语义校验、可逐条追溯、且带哈希基线的 AI 开发输入。**
 
-该 Skill 面向以下工作：
-
-- 整理业务调研文档和调研台账。
-- 根据调研材料生成一套人可读的初版 Markdown 业务模型。
-- 人工审核初版 Markdown 模型后，再进入机器模型生成。
-- 生成统一的 `model-spec.json`。
-- 生成统一 RDF 需求图和 PROV-O 来源链。
-- 使用 SHACL、SPARQL 和 OWL-RL 推理执行语义门禁。
-- 从同一模型源生成 BPMN 2.0 和 OWL 文件。
-- 模型审核通过后生成 `docs/input/00-07`。
-- 校验流程、实体、状态、规则、能力和证据之间的追溯关系。
-- 锁定模型基线，为后续 PRD、Coding Task 和 AI 编码提供输入。
-
-## 1. 核心原则
-
-本 Skill 采用“指令 + 状态机 + 执行器 + Hook + 人工审核”的控制方式：
-
-| 控制层 | 作用 |
-|---|---|
-| `SKILL.md` | 告诉 AI 必须遵循的工作方式 |
-| `pipeline-definition.json` | 定义阶段、转换、审批门禁和不变量 |
-| `pipeline-process.bpmn` | 使用中文和完整 BPMN DI 表达流水线顺序及审核回路，可由 Camunda Modeler 打开 |
-| `pipeline-ontology.owl` | 表达阶段、动作、产物和审批关系 |
-| `pipeline_runner.py` | 执行阶段转换并维护持久化状态 |
-| `pipeline_guard.py` | 阻止直接修改受保护产物 |
-| 统一需求图 | 将流程、实体、状态、规则、能力、证据和问题连接成 RDF 图 |
-| SHACL / SPARQL / 推理 | 执行完整性、追溯性和语义一致性门禁 |
-| 校验脚本 | 检查模型、引用、投影、哈希和追溯关系 |
-| 人工审核 | 确认业务事实和模型语义 |
-
-重要限制：
-
-- “继续做”“先出草稿”“稍后审核”不等于审批通过。
-- 原始调研材料不能直接生成统一需求图、BPMN、OWL 或 `00-07`。
-- 初版 Markdown 模型未经人工审核，不得编译正式 `model-spec.json`。
-- BPMN 业务名称必须使用中文；OWL 业务类、对象属性、数据属性和命名实例同时使用中文 IRI 局部名及 `zh-CN` 中文标签。
-- `entity_id`、`relation_id`、`field_id`、`state_id` 等稳定 ID 保留 ASCII，并写入对应 OWL 资源唯一的 `trace:稳定标识`。
-- 项目自定义的对象属性、数据属性、注解属性和流水线弧类型使用中文 IRI；`rdf:type`、`rdfs:subClassOf`、`rdfs:domain/range` 等 W3C 标准 URI 不改名，只补充 `zh-CN` 中文显示标签。
-- 所有业务 BPMN 必须包含完整 BPMN DI，并使用 `camunda:properties` 保存追溯信息，确保 Camunda Modeler 可打开且画布可见。
-- 统一需求图、BPMN 和 OWL 未人工审核前，不生成任何 `docs/input/00-07`。
-- AI 不得代替审核人使用 `--human-confirmed`。
-- 不支持 `--allow-unapproved` 旁路。
-- 生成文件不能手工修补，必须修改上游模型源后重新生成。
-
-## 2. 流水线阶段
-
-```mermaid
-flowchart TD
-    A["initialized"] --> B["research_registered"]
-    B --> C["modeling_scaffolded<br/>AI 生成初版 Markdown 模型"]
-    C --> D{"第一次人工审核<br/>Markdown 业务模型"}
-    D -->|通过| E["modeling_review_approved"]
-    D -->|补充调研| C
-    E --> F["spec_reviewed<br/>编译并校验 model-spec.json"]
-    F --> G["graph_generated"]
-    G --> H["graph_validated<br/>SHACL + OWL-RL + SPARQL"]
-    H --> I["models_generated"]
-    I --> J{"第二次人工审核<br/>RDF / BPMN / OWL"}
-    J -->|通过| K["models_approved"]
-    J -->|修改模型| C
-    K --> L["development_input_generated"]
-    L --> M["development_ready"]
-```
-
-完整产物流为：
+一个给 AI 编码 Agent 用的「需求编译器 + 语义门禁」：业务调研先变成人可读的模型，
+人工签字确认后，再编译成机器模型，然后从一个唯一事实源投影出统一 RDF 需求图、
+BPMN 2.0 流程、OWL 本体和 8 份开发输入文档。任何一步都过不了闸门，就不许往下走。
 
 ```text
-原始调研文档
-  -> AI 提取并生成 models/review/00-05 初版 Markdown 模型
-  -> 第一次人工审核和业务补充
-  -> reviewed model-spec.json
-  -> 统一 RDF 需求图与 PROV-O 来源链
-  -> SHACL、OWL-RL 和 SPARQL 语义验证
-  -> 候选 BPMN 与领域 OWL
-  -> 第二次人工模型审核
-  -> approved model-spec.json
-  -> 重新生成批准版统一图、BPMN 与 OWL
-  -> docs/input/00-07
-  -> 基线锁定和开发就绪校验
+调研材料 ──▶ 人工确认的模型 ──▶ 唯一模型源 ──▶ RDF 需求图 ──▶ SHACL / OWL-RL / SPARQL 门禁
+                                                                      │
+                          开发输入 00-07 ◀── 人工二次确认 ◀── BPMN + OWL ─┘
 ```
 
-两次人工审核不能合并：
+<p>
+<img alt="Python" src="https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white">
+<img alt="BPMN" src="https://img.shields.io/badge/BPMN-2.0%20%2F%20Camunda-FF6600">
+<img alt="OWL" src="https://img.shields.io/badge/OWL-RL%20%2B%20SHACL-5C2D91">
+<img alt="RDF" src="https://img.shields.io/badge/RDF-PROV--O-0B7285">
+<img alt="self-test" src="https://img.shields.io/badge/self--test-passing-brightgreen">
+<img alt="License" src="https://img.shields.io/badge/License-Apache--2.0-blue">
+</p>
 
-| 审核门禁 | 审核对象 | 主要目的 |
+---
+
+## English Overview
+
+**Research to Project Input** is a state-controlled requirements pipeline for AI coding
+agents. It converts raw business research (interviews, SOPs, process ledgers, spreadsheets)
+into a traceable, semantically validated, and hash-baselined development input package.
+
+**The problem it solves.** When an agent turns meeting notes straight into a PRD and code,
+nothing distinguishes a confirmed business fact from a plausible guess made by the model, and
+nobody can tell which source a requirement came from. The result is fast, confident, wrong code.
+
+**The approach.** Three mechanisms, enforced by code rather than by prompt instructions:
+
+1. **One canonical source.** A single `model-spec.json` is the only authoring source. The RDF
+   requirements graph, BPMN, OWL, and `docs/input/00-07` are all *deterministic projections* of
+   it — they can never disagree, because they can never be edited.
+2. **Fail closed.** An 11-stage state machine with two mandatory human approval gates. Every
+   transition is validated against recorded SHA-256 hashes. There is no `--allow-unapproved`
+   bypass, and "continue", "just draft it", or "review later" is explicitly not approval.
+3. **Semantic gating.** SHACL shape validation, OWL-RL deductive closure, and 6 competency
+   SPARQL queries must pass *before* BPMN/OWL generation. Untraced process nodes, stateful
+   entities without transitions, and open High blockers are hard errors, not warnings.
+
+**Stack.** Python 3.10+ · rdflib · pySHACL · OWL-RL · PROV-O · BPMN 2.0 (Camunda-compatible) ·
+OWL 2 · SHACL · SPARQL · JSON Schema. All runtime dependencies are vendored — the pipeline
+runs fully offline with no `pip install`.
+
+---
+
+## 一、这个项目解决什么问题
+
+### Why this exists
+
+让 AI 直接读会议纪要然后写代码，是最省事、也最危险的路径。真正的成本不在生成，
+而在于**没人分得清哪句是客户确认过的，哪句是模型自己编的**。等到代码写完，
+追溯成本已经高到没人会去做。
+
+```text
+常见路径
+  调研材料 ──▶ AI 总结 ──▶ PRD ──▶ 代码
+                 ▲
+                 └── 事实与推断混在一起，没有审核点，没有追溯，没有基线
+
+本项目路径
+  调研材料 ──▶ 人可读模型 ──▶ 人工签字 ──▶ 唯一机器模型 ──▶ 语义门禁 ──▶ 人工再签字 ──▶ 开发输入
+                    ▲                            ▲                ▲
+                批量台账格式                  哈希绑定           SHACL + 推理 + SPARQL
+```
+
+关键差别在于：**本项目把「不许跳过」写进了代码，而不是写进了提示词。**
+提示词可以被说服，状态机不行。
+
+### 它不做什么
+
+明确划清边界，避免误解：
+
+- ❌ 不是 AI 自动总结调研的摘要工具 —— 它要求人工在模型层签字。
+- ❌ 不是 PRD 生成器 —— `docs/input/00-07` 是**开发需求输入**，PRD 是它的下游。
+- ❌ 不是通用低代码平台 —— 它只负责「把需求变成可信的、可追溯的结构化模型」这一段。
+- ❌ 不硬编码任何具体业务领域 —— 实验室、制造、金融只是示例，规则本身不假设行业。
+
+---
+
+## 二、三个核心设计决策
+
+### 1. 单一事实源，只允许投影
+
+`models/spec/model-spec.json` 是唯一可以被称为「源」的文件。其余产物全部是它的投影：
+
+| 产物 | 形式 | 用途 |
 |---|---|---|
-| 第一次：业务建模审核 | `models/review/00-05` 初版 Markdown 模型 | 确认 AI 是否正确理解调研事实、流程、实体、状态、规则和边界 |
-| 第二次：正式模型审核 | 统一需求图、验证报告、BPMN、OWL | 确认机器模型是否准确表达已审核的业务模型 |
+| `requirements-graph.ttl` | 统一 RDF 需求图 | 把流程、实体、状态、规则、能力、证据、问题连成一张连通图 |
+| `*.bpmn` | BPMN 2.0 + 完整 DI | 可在 Camunda Modeler 直接打开，画布可见 |
+| `*.owl` | OWL 2 本体 | 领域类、对象属性、状态实例，含中文 IRI 与 `zh-CN` 标签 |
+| `00-07-*.md` | 8 份开发输入 | 交给下游生成 PRD / Coding Task / 代码 / 测试 |
 
-只有满足以下两个条件，才能进入后续 PRD 和开发：
+**生成物禁止手工修补。** 想改内容只有一条路：`reopen` 回到上游、改模型源、重新生成。
+这条规则由 Hook 强制，而不是靠自觉 —— 因为手工改一个投影，正是让多个产物悄悄互相
+矛盾的最快方式。
 
-```text
-current_stage = development_ready
-valid = true
-```
+### 2. 失败关闭：讲「继续」不等于审批通过
 
-## 3. 输入材料
-
-可以输入一份或多份材料，不要求第一次就完成全部调研：
-
-- AI 调研文档。
-- 访谈记录和会议纪要。
-- 流程台账。
-- SOP 摘要。
-- Excel、Word、PPT、PDF 等业务资料。
-- 业务边界说明。
-- 角色、实体、状态、规则、异常和接口清单。
-- 已有 BPMN、Ontology 或领域模型草案。
-- 证据文件和待确认问题。
-
-新增调研材料会影响已经审核的模型时，必须通过 `reopen` 回到上游阶段，
-重新审核并生成下游产物。
-
-## 4. 输出目录
-
-默认在目标项目中形成以下结构：
+11 个阶段构成严格的状态机，其中 **2 个是人工闸门**，`run-stage` 会直接拒绝跨越：
 
 ```text
-<project-root>/
-├── .requirements-pipeline/
-│   └── pipeline-state.json
-├── .codex/
-│   ├── hooks.json
-│   └── hooks/
-│       └── research_pipeline_guard.py
-├── models/
-│   ├── review/
-│   │   ├── 00-建模范围.md
-│   │   ├── 01-流程建模台账.md
-│   │   ├── 02-领域建模台账.md
-│   │   ├── 03-状态与规则台账.md
-│   │   ├── 04-接口与消息台账.md
-│   │   ├── 05-证据与待确认问题.md
-│   │   └── 06-模型审核记录.md
-│   ├── spec/
-│   │   └── model-spec.json
-│   ├── graph/
-│   │   ├── requirements-graph.ttl
-│   │   ├── requirements-graph-ontology.ttl
-│   │   ├── requirements-shapes.ttl
-│   │   ├── inferred-graph.ttl
-│   │   ├── shacl-report.ttl
-│   │   ├── reasoning-report.json
-│   │   ├── sparql-results.json
-│   │   ├── graph-validation-report.json
-│   │   └── queries/
-│   │       ├── query-manifest.json
-│   │       └── *.rq
-│   ├── bpmn/
-│   │   └── <process_id>.bpmn
-│   ├── ontology/
-│   │   └── <ontology_id>.owl
-│   └── baseline-manifest.json
-└── docs/
-    └── input/
-        ├── 00-项目概述.md
-        ├── 01-能力目录.md
-        ├── 02-领域模型.md
-        ├── 03-状态机.md
-        ├── 04-业务规则.md
-        ├── 05-流程模型.md
-        ├── 06-调研台账摘要.md
-        └── 07-待确认问题.md
+initialized
+  │ register-research
+research_registered
+  │ scaffold-review
+modeling_scaffolded
+  ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+  ┃  🔒 人工闸门 1：业务建模审核                  ┃
+  ┃     对象 models/review/00-05 初版 Markdown   ┃
+  ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+  │ approve --gate modeling --human-confirmed
+modeling_review_approved
+  │ validate-spec
+spec_reviewed
+  │ generate-graph
+graph_generated
+  │ validate-graph          ← SHACL + OWL-RL + 6 条 SPARQL
+graph_validated
+  │ generate-models
+models_generated
+  ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+  ┃  🔒 人工闸门 2：RDF / BPMN / OWL 正式模型审核 ┃
+  ┃     对象图、验证报告、BPMN、OWL               ┃
+  ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+  │ approve --gate models --human-confirmed
+models_approved
+  │ generate-input
+development_input_generated
+  │ finalize
+development_ready          ← current_stage=development_ready 且 valid=true 才算就绪
 ```
 
-## 5. 使用前提
+代码层面的强制手段：
 
-- Codex 已安装本 Skill。
-- 可使用 Python 3.10 或更高版本。
-- 目标项目目录可写。
-- 项目级 Codex Hook 已经过用户检查和信任。
+| 机制 | 实现位置 | 作用 |
+|---|---|---|
+| 阶段唯一 | `pipeline-definition.json` | 每个阶段只声明**一个**合法 `next_action` |
+| 动作校验 | `pipeline_runner.py` | `--action` 与阶段期望不符即报错退出 |
+| 闸门拒跳 | `pipeline_runner.py` | 人工闸门上调用 `run-stage` 直接抛 `PipelineError` |
+| 无旁路 | 无此代码 | 不存在 `--allow-unapproved`，也不允许重新引入 |
+| 人工声明 | `--human-confirmed` | AI 不得代替审核人提供该参数 |
+| 防篡改 | `pipeline_guard.py` | `PreToolUse` Hook 按阶段拒绝直接写入受保护产物 |
 
-Skill 安装目录：
+### 3. 语义门禁：先证明模型自洽，再生成产物
+
+图生成之后、BPMN/OWL 生成之前，必须通过三道校验。这是整个项目最核心的质量闸门：
+
+| 校验 | 引擎 | 通过标准 |
+|---|---|---|
+| 规范投影比对 | rdflib 规范化图 | 需求图必须是 model-spec 的**精确**投影，逐三元组一致 |
+| SHACL 约束 | pySHACL | `requirements-shapes.ttl` 全部 conforms |
+| OWL-RL 推理 | OWL-RL 演绎闭包 | 一致性检查无冲突，输出 `inferred-graph.ttl` |
+| 能力问题 | 6 条 SPARQL | 按 manifest 逐条满足声明的期望值 |
+
+6 条 SPARQL 查询各自负责一类「静默失效」——这类问题不会报错，只会悄悄产出错误的需求：
+
+| 查询 | 目标 | 期望 | 级别 |
+|---|---|---|---|
+| `QRY-GRAPH-001` | 没有证据、也没有待确认问题的流程节点 | empty | error |
+| `QRY-GRAPH-002` | 有状态但没有任何状态迁移的实体 | empty | error |
+| `QRY-GRAPH-003` | Must 级能力缺少节点引用或验收标准 | empty | error |
+| `QRY-GRAPH-004` | 未关闭的 High 级阻塞问题 | empty_when_approved | review |
+| `QRY-GRAPH-005` | 被多个流程节点复用的能力（复用性检查） | informational | info |
+| `QRY-GRAPH-006` | 流程节点 → 能力/实体/规则的影响面地图 | informational | info |
+
+> `QRY-GRAPH-005` 是一个刻意设计的反重复开发机制：同一能力被多个流程引用时，
+> 它们必须指向**同一个** `capability_id`，而不是每个流程各生成一份实现。
+
+---
+
+## 三、可追溯性：每个事实都能追到它的来源
+
+### Provenance
+
+统一需求图用 **PROV-O** 记录来源链，把生成的产物、模型元素、来源证据和责任人连起来：
 
 ```text
-<本 Skill 的安装目录>\research-to-project-input
+prov:Entity   调研证据 / model-spec.json / 生成的图
+prov:Activity 生成、校验、审核活动
+prov:Agent    审核人
 ```
 
-## 6. 推荐使用方式
+因此以下问题都能在图查询里回答，而不是靠翻聊天记录：
+
+- 这条业务规则，依据的是哪份证据？
+- 这个流程节点，是谁在什么时候确认的？
+- 如果这条规则要改，会影响哪些能力、实体和流程？
+
+### 追溯与就绪判定
+
+`development_ready` 不是「脚本跑完了」，而是一组硬性条件的合取：
+
+- 无悬空或缺失的稳定 ID，无双向追溯不一致；
+- 无不可达流程节点，每个异常分支在 BPMN 中都有真实路径；
+- 每个有状态实体都关联状态机或待确认问题；
+- 每条规则都关联输入、输出、触发条件与流程/实体；
+- 已批准基线中不存在未关闭的 High 级阻塞问题；
+- SHACL conforms，OWL-RL 一致性无违规，全部强制 SPARQL 达标；
+- BPMN / OWL / `00-07` 均为精确投影，**零哈希漂移**。
+
+---
+
+## 四、确定性生成：同样的输入，字节级相同的输出
+
+这是让「哈希基线」真正有意义的前提。项目为此做了三件事：
+
+1. **RDF 规范化再序列化** —— 经 `to_canonical_graph()` 处理并排序后输出，
+   消除空白节点编号和三元组顺序带来的不确定性。
+2. **统一写入约定** —— 全部产物固定 UTF-8、`\n` 换行，不随平台变化。
+3. **基线清单** —— `baseline-manifest.json` 记录所有产物的 SHA-256，
+   `validate` 逐步复核；一旦漂移，任务不得被报告为完成。
+
+副作用是：产物之间可以逐字节 diff，`reopen` 后的重新生成结果可验证，
+「模型有没有被偷偷改过」成为一个可计算的问题。
+
+### 中文建模不牺牲技术标识
+
+项目要求在业务侧全面使用中文，同时保持技术标识稳定 —— 二者通过一层显式映射解耦：
+
+| 类型 | XML ID / OWL IRI | 中文业务名称 | 稳定标识 |
+|---|---|---|---|
+| BPMN 节点 | `ND-IMPORT-TASK` | 导入工单 | XML `id` |
+| BPMN 网关 | `GW-TASK-COMPLETE` | 任务数据是否完整 | XML `id` |
+| OWL 类 | `#工单` | 工单 | `trace:稳定标识 = ENT-TEST-TASK` |
+| OWL 对象属性 | `#工单_产生_处理结果` | 产生 | `trace:稳定标识 = REL-TASK-RESULT` |
+
+下游代码和测试引用 ASCII 稳定标识；界面、图形与业务文档使用中文名称。
+**W3C 标准 URI（`rdf:type`、`rdfs:subClassOf` 等）不改名**，只补充 `zh-CN` 显示标签。
+
+---
+
+## 五、30 秒验证
+
+不需要任何 API Key、不需要联网、不需要 `pip install`（依赖已 vendored）。
+
+```bash
+git clone https://github.com/Tommy1Tang/research-to-project-input.git
+cd research-to-project-input
+python scripts/self_test.py
+```
+
+预期输出：
+
+```text
+PASS self-test: state machine, human gates, hooks, generation, semantic traceability,
+High blockers, baseline, and drift detection
+```
+
+这个回归测试会在临时目录里跑完整条链路，并且**包含大量负向用例** ——
+它不只断言「正常能跑通」，还会断言「该拦的必须拦住」（即 `expected=1` /
+`expected=2` 的退出码断言，覆盖漂移、越权和旁路尝试）：
+
+```text
+✓ 阶段状态机与合法转移
+✓ 两个人工闸门的拒绝行为（未审批时 run-stage 必须失败）
+✓ 未审批生成旁路阻断
+✓ 统一需求图 / BPMN / OWL / 00-07 生成
+✓ PROV-O 来源链、SHACL、SPARQL、OWL-RL 推理
+✓ RDF 空白节点规范化与可重复哈希
+✓ 中文名称、中文 IRI、zh-CN 标签、trace:稳定标识 的正向与负向门禁
+✓ 控制 JSON / 控制 BPMN / 流水线 OWL / 状态模板一致性
+✓ High 级阻塞问题、基线哈希与漂移检测
+✓ PreToolUse 与 Stop Hook
+```
+
+也可以单独校验内置的完整示例模型：
+
+```bash
+python scripts/validate_model_spec.py assets/model-spec.example.json
+# -> OK assets/model-spec.example.json
+```
+
+`assets/model-spec.example.json` 是一个字段完整的工单处理领域样例（已批准状态），
+可以直接用来看清 `model-spec.json` 到底长什么样。
+
+---
+
+## 六、目录结构
+
+```text
+research-to-project-input/
+├── SKILL.md                          AI 执行规则（强制控制模式、门禁边界）
+├── README.md                         本文件：项目概览
+├── docs/USAGE.md                     完整操作手册（逐条命令）
+├── agents/openai.yaml                Agent 接入定义
+│
+├── references/                       契约层：把规则写成可校验的契约，而非散文
+│   ├── pipeline-definition.json      可执行阶段契约（11 阶段 / 转移 / 门禁 / 不变量）
+│   ├── pipeline-process.bpmn         流水线自身的 BPMN 流程视图（中文 + 完整 DI）
+│   ├── pipeline-ontology.owl         流水线自身的 OWL 语义视图
+│   ├── graph-engineering-contract.md 统一需求图与语义验证契约
+│   ├── modeling-contract.md          建模 Markdown 契约
+│   ├── model-spec-contract.md        唯一模型源契约
+│   ├── bpmn-output-contract.md       BPMN 投影契约
+│   ├── owl-output-contract.md        OWL 投影契约
+│   ├── output-contract.md            00-07 输出契约
+│   ├── workflow.md                   端到端追溯与就绪定义
+│   └── pipeline-commands.md          命令与恢复流程
+│
+├── scripts/                          执行层：17 个 Python 模块
+│   ├── pipeline_runner.py            状态机执行器（11 阶段、门禁、哈希、reopen）
+│   ├── pipeline_guard.py             Codex Hook 守卫（PreToolUse / Stop）
+│   ├── model_spec_lib.py             模型源加载、引用校验、中文门禁
+│   ├── graph_runtime.py              离线 RDF 运行时装配（rdflib / pySHACL / OWL-RL）
+│   ├── generate_requirements_graph.py 统一 RDF 需求图 + PROV-O 生成器
+│   ├── generate_bpmn_from_spec.py    BPMN 2.0 + DI 生成器
+│   ├── generate_owl_from_spec.py     OWL 2 生成器（中文 IRI + zh-CN 标签）
+│   ├── generate_project_input_from_spec.py  00-07 生成器
+│   ├── scaffold_modeling_review.py   生成建模 Markdown 台账骨架
+│   ├── scaffold_project_input.py     按模板生成 00-07 骨架
+│   ├── validate_graph_engineering.py SHACL + SPARQL + OWL-RL 门禁
+│   ├── validate_traceability.py      端到端追溯与投影一致性
+│   ├── validate_pipeline_control.py  控制模型四向一致性（JSON/BPMN/OWL/模板）
+│   ├── validate_model_artifacts.py   BPMN / OWL 文件级校验
+│   ├── create_baseline_manifest.py   SHA-256 基线清单
+│   └── self_test.py                  全链路回归测试（含负向用例）
+│
+├── assets/
+│   ├── model-spec.schema.json        模型源 JSON Schema
+│   ├── model-spec.example.json       完整领域示例（工单处理）
+│   ├── requirements-graph-ontology.ttl  需求图词汇与 OWL 公理
+│   ├── requirements-shapes.ttl       SHACL 约束
+│   ├── sparql/                       6 条能力问题查询 + manifest
+│   └── templates/project-input/      00-07 模板
+│
+└── vendor/                           离线运行时（rdflib / pySHACL / OWL-RL 等）
+```
+
+---
+
+## 七、技术栈
+
+| 领域 | 选型 | 在本项目中的作用 |
+|---|---|---|
+| 语义网 | rdflib 7.6 | RDF 图构建、规范化、精确投影比对 |
+| 约束校验 | pySHACL 0.40 | 需求图结构约束的机器可判定校验 |
+| 本体推理 | OWL-RL 7.6 | 演绎闭包与一致性检查 |
+| 来源建模 | PROV-O | 证据 → 模型 → 产物 → 责任人 的追溯链 |
+| 流程建模 | BPMN 2.0 / Camunda | 可被业务方直接打开审阅的流程产物 |
+| 本体建模 | OWL 2 | 领域类、属性、状态实例的形式化表达 |
+| 查询 | SPARQL 1.1 | 6 条能力问题，覆盖复用性与影响面分析 |
+| 契约 | JSON Schema | 模型源的编辑器级校验 |
+| 控制 | JSON + BPMN + OWL 四向一致 | 流水线定义自身也被校验，防止定义漂移 |
+| 语言 | Python 3.10+ | 执行器、生成器、校验器，全部零第三方安装 |
+
+---
+
+## 八、工程规模
+
+| 项目 | 数量 |
+|---|---|
+| Python 执行层 | 17 个模块 / 约 6,500 行 |
+| 契约与规则文档 | 9 份 / 约 1,400 行 |
+| 流水线阶段 | 11 个（含 2 个人工闸门） |
+| SPARQL 能力问题 | 6 条 |
+| 开发输入模板 | 8 份 |
+| 回归测试 | 全链路，含大量负向断言 |
+| 运行时依赖安装 | 0（全部 vendored，可离线运行） |
+
+---
+
+## 九、接入方式
 
 在 Codex 中明确调用：
 
@@ -187,332 +375,79 @@ Skill 安装目录：
 $research-to-project-input
 ```
 
-示例请求：
-
 ```text
 使用 $research-to-project-input，将这些调研材料纳入需求流水线。
 先检查当前状态，只执行允许的下一阶段，不要跨过人工审核门禁。
 ```
 
-AI 每次恢复任务时，应先执行：
+无论人工还是 AI 恢复任务，第一步永远是查状态、问下一步，而不是直接动手：
 
-```powershell
-python "<skill>\scripts\pipeline_runner.py" --project-root "<project-root>" status
-python "<skill>\scripts\pipeline_runner.py" --project-root "<project-root>" next
+```bash
+python scripts/pipeline_runner.py --project-root <project-root> status
+python scripts/pipeline_runner.py --project-root <project-root> next
 ```
 
-## 7. 首次初始化
+`next` 只会返回**当前唯一合法**的动作。完整命令、两个审批闸门的具体参数、
+受控返工（`reopen`）与常见问题，见 **[docs/USAGE.md](docs/USAGE.md)**。
 
-```powershell
-python "<skill>\scripts\pipeline_runner.py" `
-  --project-root "<project-root>" `
-  init
-```
+---
 
-`init` 默认完成：
+## 十、已知边界
 
-- 创建 `.requirements-pipeline/pipeline-state.json`。
-- 校验控制 JSON、控制 BPMN、流水线 OWL 和状态模板的一致性。
-- 安装项目级 `PreToolUse` 和 `Stop` Hook。
+诚实说明当前实现的范围与局限：
 
-Codex 会要求检查并信任新增 Hook。Hook 未受信任前，Runner 仍可工作，
-但不能依赖 Hook 阻止 AI 直接写入文件。
+- **人工闸门依赖流程纪律。** `--human-confirmed` 是「人在回路」的声明，
+  由协议约束；Agent 在缺少明确人工确认时不得提供该参数。
+- **Hook 是额外防线，不是唯一防线。** Hook 需要宿主（Codex）信任后才生效；
+  即使 Hook 未生效，Runner 的阶段校验和哈希校验仍然独立成立。
+- **`model-spec.json` 目前由人与 AI 协作编制**，再经校验器把关，
+  而不是由 Markdown 全自动编译 —— 这一步保留了刻意的设计自由度。
+- **BPMN/OWL 面向业务可读性与追溯完整性优化**，而非面向可执行流程引擎部署。
+- 项目文档以中文为主，因此领域词汇、IRI 与标签体系均围绕中文建模设计。
 
-登记调研文件：
+---
 
-```powershell
-python "<skill>\scripts\pipeline_runner.py" `
-  --project-root "<project-root>" `
-  register-research `
-  --file "<research-file-1>" `
-  --file "<research-file-2>"
-```
+## 十一、许可
 
-## 8. 执行自动阶段
-
-查询当前唯一允许的动作：
-
-```powershell
-python "<skill>\scripts\pipeline_runner.py" `
-  --project-root "<project-root>" `
-  next
-```
-
-执行当前自动阶段：
-
-```powershell
-python "<skill>\scripts\pipeline_runner.py" `
-  --project-root "<project-root>" `
-  run-stage
-```
-
-验证当前状态：
-
-```powershell
-python "<skill>\scripts\pipeline_runner.py" `
-  --project-root "<project-root>" `
-  validate
-```
-
-`run-stage` 不会自动跨过人工审核点。
-
-## 9. 建模 Markdown 人工审核
-
-登记调研材料后，AI 必须先根据材料填写
-`models/review/00-05`，形成初版 Markdown 业务模型。它是供业务人员阅读、
-补充和确认的建模基线，不是简单的调研摘要，也不是功能清单。
-
-初版模型包括：
-
-| 文件 | 内容 |
-|---|---|
-| `00-建模范围.md` | 项目边界、阶段范围、系统责任和外部参与方 |
-| `01-流程建模台账.md` | 场景、流程节点、角色、输入输出、异常和证据 |
-| `02-领域建模台账.md` | 实体、属性、关系、基数、术语和证据 |
-| `03-状态与规则台账.md` | 状态迁移、触发事件、守卫条件和业务规则 |
-| `04-接口与消息台账.md` | 软件接口、消息方向、字段、触发和失败处理 |
-| `05-证据与待确认问题.md` | 来源证据、AI 推断、待确认问题和阻塞级别 |
-
-AI 完成这些文件后，人工检查：
-
-- 项目范围是否准确。
-- 流程顺序和角色是否准确。
-- 网关条件和异常分支是否完整。
-- 实体、关系和基数是否准确。
-- 状态流转和业务规则是否完整。
-- 接口方向、触发方式和失败处理是否明确。
-- 每项事实是否有证据或待确认问题。
-
-确认通过后执行：
-
-```powershell
-python "<skill>\scripts\pipeline_runner.py" `
-  --project-root "<project-root>" `
-  approve `
-  --gate modeling `
-  --reviewer "<审核人>" `
-  --review-date "YYYY-MM-DD" `
-  --note "<审核结论和批准范围>" `
-  --human-confirmed
-```
-
-只有用户明确完成审核后，AI 才能执行该命令。
-
-第一次审核通过前，流水线必须停在 `modeling_scaffolded`。不得提前生成
-`model-spec.json`、统一需求图、BPMN、OWL 或 `docs/input/00-07`。
-
-## 10. 统一需求图、BPMN 和 OWL 人工审核
-
-候选图模型、BPMN 和 OWL 生成后，人工检查：
-
-- BPMN 流程、参与方、泳道、任务、事件、网关、顺序流和消息流是否使用中文业务名称。
-- BPMN 在 Camunda Modeler 中是否能够打开，所有节点和连线是否可见。
-- OWL 本体、类、属性和状态实例是否具有 `xml:lang="zh-CN"` 的中文标签。
-- OWL 类、对象属性、数据属性、注解属性和状态实例是否使用中文 IRI 局部名，并且各自只有一个非空、全局唯一的 `trace:稳定标识`。
-- 统一需求图是否连通流程、角色、实体、状态、规则、能力、接口、证据和问题。
-- PROV-O 是否记录来源证据、生成活动和审核人。
-- `shacl-report.ttl` 是否符合，推理报告是否无一致性错误。
-- 强制 SPARQL 查询是否通过，复用和影响分析结果是否合理。
-- BPMN 起点、终点、任务和网关是否正确。
-- 分支条件、退回路径和异常路径是否完整。
-- 角色泳道和系统参与方是否准确。
-- OWL 类、属性、关系、基数和状态是否准确。
-- BPMN、OWL 和建模 Markdown 是否表达同一业务事实。
-- 重复流程节点是否正确复用了同一个 `capability_id`。
-
-中文建模不改变技术标识。例如：
-
-| 类型 | XML ID / OWL IRI | 中文业务名称 | 稳定 ID |
-|---|---|---|---|
-| BPMN 节点 | `ND-IMPORT-TASK` | 导入工单 | XML `id` |
-| BPMN 网关 | `GW-TASK-COMPLETE` | 任务数据是否完整 | XML `id` |
-| OWL 类 | `#工单` | 工单 | `trace:稳定标识 = ENT-TEST-TASK` |
-| OWL 对象属性 | `#工单_产生_处理结果` | 产生 | `trace:稳定标识 = REL-TASK-RESULT` |
-| OWL 状态实例 | `#工单_待处理转为处理中_开始处理` | 待处理转为处理中 | `trace:稳定标识 = ST-TASK-START` |
-
-下游 PRD、代码和测试继续引用 `trace:稳定标识` 中的技术标识；界面、图形、业务文档和项目自定义 OWL IRI 使用中文名称。
-
-将结论写入 `models/review/06-模型审核记录.md`，然后执行：
-
-```powershell
-python "<skill>\scripts\pipeline_runner.py" `
-  --project-root "<project-root>" `
-  approve `
-  --gate models `
-  --reviewer "<审核人>" `
-  --review-date "YYYY-MM-DD" `
-  --note "<审核结论和批准范围>" `
-  --human-confirmed
-```
-
-Runner 会：
-
-1. 检查候选统一需求图、验证报告、BPMN 和 OWL 是否发生漂移。
-2. 将 `model-spec.json` 状态更新为 `approved`。
-3. 记录审核人、日期和结论。
-4. 从批准后的模型源重新生成并验证统一需求图、BPMN 和 OWL。
-
-## 11. 受控返工
-
-需要修改已经审核的内容时，不能直接编辑受保护文件。
-
-回到建模 Markdown：
-
-```powershell
-python "<skill>\scripts\pipeline_runner.py" `
-  --project-root "<project-root>" `
-  reopen `
-  --to modeling_scaffolded `
-  --reason "<变更原因>"
-```
-
-回到统一模型源：
-
-```powershell
-python "<skill>\scripts\pipeline_runner.py" `
-  --project-root "<project-root>" `
-  reopen `
-  --to modeling_review_approved `
-  --reason "<变更原因>"
-```
-
-可回退阶段：
-
-| 阶段 | 适用情况 |
-|---|---|
-| `initialized` | 更换或追加调研来源 |
-| `research_registered` | 重新创建建模文档 |
-| `modeling_scaffolded` | 修改建模 Markdown 并重新人工审核 |
-| `modeling_review_approved` | 重新编制或修改 `model-spec.json` |
-
-下游旧文件会保留用于比较，但在重新生成前都属于过期产物。
-
-## 12. 最终验收
-
-完整生成后执行：
-
-```powershell
-python "<skill>\scripts\pipeline_runner.py" `
-  --project-root "<project-root>" `
-  validate
-
-python "<skill>\scripts\pipeline_runner.py" `
-  --project-root "<project-root>" `
-  status `
-  --json
-```
-
-开发就绪要求：
-
-- `current_stage` 为 `development_ready`。
-- `valid` 为 `true`。
-- 无开放的 High 阻塞问题。
-- 统一需求图、BPMN、OWL 和 `00-07` 是当前模型源的精确投影。
-- SHACL 符合，OWL-RL 推理无一致性错误，强制 SPARQL 查询全部通过。
-- 基线 SHA-256 无漂移。
-- 所有关键对象具有证据或待确认问题。
-- 流程节点可从开始事件到达，并能够到达结束事件。
-- 异常分支在 BPMN 中有真实路径。
-
-## 13. Hook 保护范围
-
-进入相应阶段后，Hook 会阻止直接修改：
-
-- `.requirements-pipeline/pipeline-state.json`
-- `models/graph/`
-- `models/bpmn/`
-- `models/ontology/`
-- `models/baseline-manifest.json`
-- `docs/input/`
-- 已审核的 `models/review/00-06`
-- 已校验的 `models/spec/model-spec.json`
-
-`Stop` Hook 会在 AI 准备结束任务时重新检查流水线完整性。发现哈希漂移时，
-任务不能被报告为完成。
-
-Hook 是额外防线，不替代 Runner、校验脚本和人工审核。
-
-## 14. 常见问题
-
-### 调研必须全部完成后才能开始吗？
-
-不需要。可以分批调研，但每次增加影响模型的新材料，都需要受控回退、
-更新建模文档并重新审核。
-
-### 可以跳过图模型、BPMN 和 OWL 审核，先生成 00-07 吗？
-
-不可以。该 Skill 已删除未审批生成旁路。
-
-### 可以手工修改统一需求图、BPMN、OWL 或 00-07 吗？
-
-不可以。应修改建模 Markdown 或 `model-spec.json`，然后重新生成。
-
-### 多个 BPMN 使用同一个功能会重复开发吗？
-
-不会因为流程重复出现就自动生成多个能力。多个流程节点应引用同一个
-`capability_id`，由能力目录统一承载复用能力。
-
-### `docs/input/00-07` 是 PRD 吗？
-
-不是。它们是经过模型审核的开发需求输入，后续 AI 应基于这些文件继续生成
-PRD、架构设计、Coding Task、代码和测试。
-
-### Hook 没有运行怎么办？
-
-检查：
-
-1. 项目中是否存在 `.codex/hooks.json`。
-2. Codex 是否已信任当前 Hook 定义。
-3. Skill 和项目路径是否仍然有效。
-4. 必要时执行 `pipeline_runner.py install-hooks`。
-
-## 15. 自测试
-
-```powershell
-python "<skill>\scripts\self_test.py"
-```
-
-自测试覆盖：
-
-- 阶段状态机。
-- 两个人工审批门禁。
-- 未审批生成旁路阻断。
-- 统一需求图、BPMN、OWL 和 `00-07` 生成。
-- PROV-O 来源链、SHACL、SPARQL 和 OWL-RL 推理验证。
-- RDF 空白节点规范化与可重复哈希。
-- BPMN 中文名称、OWL 中文自定义 IRI、`zh-CN` 标签及 `trace:稳定标识` 的正向与负向门禁。
-- 控制 JSON、控制 BPMN、流水线 OWL 和状态模板一致性。
-- 追溯关系和语义投影。
-- High 阻塞问题。
-- 基线哈希和漂移检测。
-- `PreToolUse` 和 `Stop` Hook。
-
-预期结果：
+本项目采用 **Apache License 2.0** 授权，全文见 [LICENSE](LICENSE)。
 
 ```text
-PASS self-test: state machine, human gates, hooks, generation,
-semantic traceability, High blockers, baseline, and drift detection
+Copyright 2026 tommytang
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
 ```
 
-## 16. 文件职责
+`vendor/` 目录中的第三方依赖保留其各自的原始许可证，均随包附带：
 
-| 文件 | 职责 |
+| 依赖 | 许可证 |
 |---|---|
-| `SKILL.md` | AI 执行规则 |
-| `README.md` | 人工使用说明 |
-| `references/pipeline-definition.json` | 可执行阶段契约 |
-| `references/pipeline-process.bpmn` | Camunda 兼容的中文流水线流程模型 |
-| `references/pipeline-ontology.owl` | 流水线语义模型 |
-| `references/graph-engineering-contract.md` | 统一需求图及语义验证契约 |
-| `assets/requirements-graph-ontology.ttl` | 需求图词汇与 OWL 公理 |
-| `assets/requirements-shapes.ttl` | SHACL 约束 |
-| `assets/sparql/` | SPARQL 查询和执行清单 |
-| `scripts/pipeline_runner.py` | 状态机执行器 |
-| `scripts/generate_requirements_graph.py` | 统一需求图生成器 |
-| `scripts/validate_graph_engineering.py` | SHACL、SPARQL 和推理门禁 |
-| `scripts/pipeline_guard.py` | Codex Hook 守卫 |
-| `scripts/validate_pipeline_control.py` | 控制模型一致性校验 |
-| `scripts/self_test.py` | 全链路回归测试 |
+| rdflib 7.6 | BSD-3-Clause |
+| pySHACL 0.40 | Apache-2.0 |
+| OWL-RL 7.6 | W3C-20150513 |
+| prettytable 3.18 | BSD-3-Clause |
+| html5rdf 1.2.1 | MIT |
+| pyparsing 3.3.2 | MIT |
+| wcwidth 0.8.2 | MIT |
+| packaging 26.2 | Apache-2.0 OR BSD-2-Clause |
+
+详见各 `vendor/*.dist-info/` 目录中的 `LICENSE` 文件。
+
+---
+
+## 文档导航
+
+| 文档 | 内容 |
+|---|---|
+| **README.md**（本文件） | 项目定位、架构决策、快速验证 |
+| [docs/USAGE.md](docs/USAGE.md) | 完整操作手册：初始化、注册调研、审批、返工、验收 |
+| [SKILL.md](SKILL.md) | AI 执行规则与强制控制模式 |
+| [references/workflow.md](references/workflow.md) | 端到端追溯与开发就绪定义 |
+| [references/pipeline-definition.json](references/pipeline-definition.json) | 可执行的阶段契约（唯一权威） |
+| [LICENSE](LICENSE) | Apache License 2.0 全文 |
 
 遇到规则冲突时，以 `SKILL.md`、`pipeline-definition.json` 和
-`pipeline_runner.py` 的门禁结果为准，README 仅用于人工理解和操作。
+`pipeline_runner.py` 的门禁结果为准。
