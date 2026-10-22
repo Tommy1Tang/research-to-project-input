@@ -113,6 +113,12 @@ python <runner> --project-root . status --json
 Only `current_stage: development_ready` with `valid: true` is an accepted AI
 development-input baseline.
 
+`finalize` also writes the delivery baseline package at
+`docs/input/models/` (spec, BPMN, OWL, graph, and a consumer-format
+`baseline-manifest.json`). That package is what `agent-delivery-gate` validates
+and slices; the root `models/` tree remains the authoring source. The export is
+regenerated on every finalize and reports the manifest path it wrote.
+
 ## 7. Diagnostic Commands
 
 Only these lower-level validators may be called for diagnosing a failed stage:

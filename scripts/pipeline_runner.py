@@ -619,6 +619,7 @@ class Pipeline:
             raise PipelineError("Cannot finalize a drifted pipeline:\n" + "\n".join(errors))
         owl = self.owl_path()
         manifest = self.root / "models" / "baseline-manifest.json"
+        delivery_manifest = self.root / "docs" / "input" / "models" / "baseline-manifest.json"
         self.run_script(
             "create_baseline_manifest.py",
             [
@@ -636,6 +637,23 @@ class Pipeline:
                 str(manifest),
                 "--project-root",
                 str(self.root),
+            ],
+        )
+        self.run_script(
+            "export_delivery_package.py",
+            [
+                "--project-root",
+                str(self.root),
+                "--spec",
+                str(self.spec_path()),
+                "--bpmn-dir",
+                "models/bpmn",
+                "--owl",
+                str(owl),
+                "--graph-dir",
+                str(self.graph_dir()),
+                "--docs-dir",
+                "docs/input",
             ],
         )
         self.run_script(
@@ -657,7 +675,7 @@ class Pipeline:
                 str(self.root),
             ],
         )
-        self.record_group(state, "baseline_manifest", [manifest])
+        self.record_group(state, "baseline_manifest", [manifest, delivery_manifest])
         self.event(
             state,
             "finalize",

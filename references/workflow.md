@@ -23,6 +23,7 @@ Use one traceable pipeline from research to coding:
   -> 建模审核通过
   -> approved model-spec.json
   -> docs/input/00-07
+  -> docs/input/models/ delivery baseline package
   -> 跨文件一致性校验
   -> 基线哈希锁定
   -> 能力目录
@@ -196,6 +197,8 @@ After generation:
 
 - Create `models/baseline-manifest.json`.
 - Include reviewed Markdown and local evidence sources in the manifest.
+- Export `docs/input/models/` and its delivery-format manifest for
+  `agent-delivery-gate`; the root `models/` tree remains the authoring source.
 - Validate complete ID coverage, semantic links, scope boundaries, and hashes.
 - If any generated artifact is edited independently, mark the baseline stale and regenerate from the source.
 - Use `pipeline_runner.py reopen` before changing an approved upstream source.

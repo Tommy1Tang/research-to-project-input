@@ -85,10 +85,16 @@ Artifact flow:
   -> approved model-spec.json and regenerated graph / .bpmn / .owl
   -> generated docs/input/00-07
   -> models/baseline-manifest.json
+  -> docs/input/models/ (delivery baseline package for agent-delivery-gate)
   -> PRD / Coding Task / AI coding
 ```
 
 Raw research cannot directly produce development-ready `docs/input/00-07`.
+
+The root `models/` tree is the authoring source. `finalize` also projects the
+approved spec, BPMN, OWL, and graph into `docs/input/models/` and writes a
+delivery-format `baseline-manifest.json` there, so `agent-delivery-gate` can
+validate and slice the machine baseline without reading the authoring tree.
 
 ## Required References
 
@@ -195,7 +201,8 @@ A result is development-ready only when the runner reaches
 - Always generate all eight files `00-项目概述.md` through
   `07-待确认问题.md`.
 - Default directories are `models/review`, `models/spec`, `models/graph`,
-  `models/bpmn`, `models/ontology`, and `docs/input`.
+  `models/bpmn`, `models/ontology`, `docs/input`, and the generated delivery
+  package `docs/input/models/`.
 - Preserve project-specific scope strictly as supported by the registered
   research sources. Do not invent scope, integrations, automation levels, or
   compliance requirements that the sources do not support.

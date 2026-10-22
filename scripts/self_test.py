@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import copy
+import hashlib
 import os
 import subprocess
 import sys
@@ -146,6 +147,58 @@ def main() -> int:
             str(root),
         ]
         run(baseline_command)
+
+        delivery_dir = docs_dir / "models"
+        export_command = [
+            sys.executable,
+            str(scripts / "export_delivery_package.py"),
+            "--project-root",
+            str(root),
+            "--spec",
+            str(spec_path),
+            "--bpmn-dir",
+            str(bpmn_dir),
+            "--owl",
+            str(owl_path),
+            "--graph-dir",
+            str(graph_dir),
+            "--docs-dir",
+            str(docs_dir),
+        ]
+        run(export_command)
+        delivery_manifest_path = delivery_dir / "baseline-manifest.json"
+        delivery_manifest = json.loads(delivery_manifest_path.read_text(encoding="utf-8"))
+        if delivery_manifest.get("baselineId") != sample["meta"]["baseline_id"]:
+            raise RuntimeError("Delivery manifest baselineId does not match the spec.")
+        listed = {
+            entry["path"]: entry["sha256"]
+            for entry in delivery_manifest.get("files", [])
+        }
+        required = {
+            "00-项目概述.md",
+            "07-待确认问题.md",
+            "models/spec/model-spec.json",
+            "models/bpmn/PROC-RESULT-PREP.bpmn",
+            f"models/ontology/{owl_path.name}",
+        }
+        missing = sorted(required - set(listed))
+        if missing:
+            raise RuntimeError(f"Delivery manifest is missing required files: {missing}")
+        if "models/baseline-manifest.json" in listed:
+            raise RuntimeError("Delivery manifest must not list itself.")
+        for relative, digest in listed.items():
+            path = docs_dir / relative
+            if not path.is_file():
+                raise RuntimeError(f"Delivery manifest lists a missing file: {relative}")
+            if hashlib.sha256(path.read_bytes()).hexdigest() != digest:
+                raise RuntimeError(f"Delivery manifest hash mismatch: {relative}")
+
+        stale = delivery_dir / "stale.txt"
+        stale.write_text("stale\n", encoding="utf-8")
+        run(export_command)
+        if stale.exists():
+            raise RuntimeError("Delivery export did not clear stale package files.")
+
         validation_command = [
             sys.executable,
             str(scripts / "validate_traceability.py"),

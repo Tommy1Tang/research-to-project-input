@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import re
 import sys
 from pathlib import Path
 from typing import Any, Iterable
@@ -32,6 +33,70 @@ def table(headers: list[str], rows: Iterable[Iterable[Any]]) -> str:
 def bullets(values: Any, empty: str = "- 无") -> str:
     items = text_list(values)
     return "\n".join(f"- {item}" for item in items) if items else empty
+
+
+def field(label: str, value: Any) -> str:
+    """Render one `- **label**：value` bullet.
+
+    The downstream agent-delivery-gate input contract parses these with
+    `^\\s*[-*]\\s*\\*\\*<label>\\*\\*\\s*[：:]`, so the bold markers are
+    load-bearing, not cosmetic: without them every capability is reported as
+    missing its goal / trigger role / inputs / outputs.
+    """
+    return f"- **{label}**：{md(value)}"
+
+
+def gherkin_lines(criteria: list[str]) -> str:
+    """Expand one-line `Given …, When …, Then …` criteria into three lines.
+
+    The canonical spec stores each acceptance criterion as a single line, but
+    `assets/templates/project-input/01-能力目录.template.md` and the downstream
+    contract checker both require the three Gherkin keywords to open their own
+    line. Splitting here keeps `model-spec.json` untouched while emitting the
+    prescribed shape.
+    """
+    out: list[str] = []
+    for criterion in criteria:
+        text = md(criterion).strip()
+        match = re.match(
+            r"^Given\b(.*?)[,，]\s*When\b(.*?)[,，]\s*Then\b(.*)$",
+            text,
+        )
+        if match:
+            out.extend(
+                f"{keyword}{clause.rstrip(' ,，')}"
+                for keyword, clause in zip(("Given", "When", "Then"), match.groups())
+            )
+        else:
+            # Not the uniform three-clause shape; keep it verbatim rather than
+            # mangling a criterion that was authored differently.
+            out.append(text)
+    return "\n".join(out)
+
+
+def rule_id(value: Any) -> str:
+    """Map a canonical spec rule_id onto its contract-mandated `RULE-` form.
+
+    `agent-delivery-gate/references/prd-input-contract.md` forbids bare `R-`
+    because it is a prefix of both `ROLE-` and `REL-`, which makes mechanical ID
+    matching depend on regex branch order. `model-spec.json` is frozen upstream
+    at `development_ready`, so the compliant prefix is asserted here, at the
+    projection boundary, and the canonical spec keeps its internal `R-` ids.
+
+    This is the single authority for the mapping: the projection helpers below
+    and `validate_traceability.py` both call it, so the two can never disagree.
+    """
+    text = "" if value is None else str(value)
+    return re.sub(r"(?<![A-Za-z0-9-])R-", "RULE-", text)
+
+
+def rule_ref(value: Any) -> str:
+    """Backwards-compatible alias; prefer :func:`rule_id`."""
+    return rule_id(value)
+
+
+def rule_refs(values: Any) -> str:
+    return rule_id(joined(values))
 
 
 def generated_header(
@@ -204,7 +269,7 @@ def generate_05(spec: dict[str, Any], header: str) -> str:
                     joined(node.get("state_ids")),
                     joined(node.get("capability_ids")),
                     joined(node.get("interface_ids")),
-                    joined(node.get("rule_ids")),
+                    rule_refs(node.get("rule_ids")),
                     joined(node.get("exception_ids")),
                     joined(node.get("evidence_ids")),
                     joined(node.get("question_ids")),
@@ -217,7 +282,7 @@ def generate_05(spec: dict[str, Any], header: str) -> str:
                 flow.get("target"),
                 flow.get("name"),
                 flow.get("condition"),
-                joined(flow.get("rule_ids")),
+                rule_refs(flow.get("rule_ids")),
                 joined(flow.get("exception_ids")),
                 joined(flow.get("evidence_ids")),
                 joined(flow.get("question_ids")),
@@ -408,7 +473,7 @@ def generate_03(spec: dict[str, Any], header: str) -> str:
                 item.get("node_id"),
                 item.get("actor"),
                 item.get("guard_condition"),
-                joined(item.get("guard_rule_ids")),
+                rule_refs(item.get("guard_rule_ids")),
                 joined(item.get("exception_ids")),
                 bool(item.get("rollback_state")),
                 item.get("rollback_state"),
@@ -451,7 +516,7 @@ def generate_03(spec: dict[str, Any], header: str) -> str:
 def generate_04(spec: dict[str, Any], header: str) -> str:
     summary_rows = [
         (
-            item.get("rule_id"),
+            rule_ref(item.get("rule_id")),
             item.get("name"),
             item.get("type"),
             joined(item.get("capability_ids")),
@@ -489,16 +554,16 @@ def generate_04(spec: dict[str, Any], header: str) -> str:
             for value in text_or_objects(item.get("outputs"))
         ]
         sections.append(
-            f"""### {item.get("rule_id")} {item.get("name")}
+            f"""### {rule_ref(item.get("rule_id"))} {item.get("name")}
 
-- 规则类型：{md(item.get("type"))}
-- 关联能力：{md(joined(item.get("capability_ids")))}
-- 关联流程：{md(joined(item.get("process_ids")))}
-- 关联节点：{md(joined(item.get("node_ids")))}
-- 关联实体：{md(joined(item.get("entity_ids")))}
-- 触发时机：{md(item.get("trigger"))}
-- 证据来源：{md(joined(item.get("evidence_ids")))}
-- 待确认问题：{md(joined(item.get("question_ids")))}
+{field("规则类型", item.get("type"))}
+{field("关联能力", joined(item.get("capability_ids")))}
+{field("关联流程", joined(item.get("process_ids")))}
+{field("关联节点", joined(item.get("node_ids")))}
+{field("关联实体", joined(item.get("entity_ids")))}
+{field("触发时机", item.get("trigger"))}
+{field("证据来源", joined(item.get("evidence_ids")))}
+{field("待确认问题", joined(item.get("question_ids")))}
 
 **输入条件**
 
@@ -547,7 +612,7 @@ def generate_01(spec: dict[str, Any], header: str) -> str:
             joined(item.get("process_ids")),
             joined(item.get("node_ids")),
             joined(item.get("entity_ids")),
-            joined(item.get("rule_ids")),
+            rule_refs(item.get("rule_ids")),
             joined(item.get("state_ids")),
             joined(item.get("interface_ids")),
             len(text_list(item.get("node_ids"))) > 1,
@@ -564,23 +629,23 @@ def generate_01(spec: dict[str, Any], header: str) -> str:
             f"{index}. {step}" for index, step in enumerate(text_list(item.get("normal_flow")), start=1)
         ) or "1. 无"
         exception_flow = bullets(item.get("exception_flow"))
-        criteria = "\n".join(text_list(item.get("acceptance_criteria"))) or "待补充"
+        criteria = rule_ref(gherkin_lines(text_list(item.get("acceptance_criteria")))) or "待补充"
         sections.append(
             f"""### {item.get("capability_id")} {item.get("name")}
 
-- 业务目标：{md(item.get("goal"))}
-- 触发角色：{md(joined(item.get("role_ids")))}
-- 输入：{md(joined(item.get("inputs")))}
-- 输出：{md(joined(item.get("outputs")))}
-- 关联实体：{md(joined(item.get("entity_ids")))}
-- 关联规则：{md(joined(item.get("rule_ids")))}
-- 关联状态：{md(joined(item.get("state_ids")))}
-- 接口依赖：{md(joined(item.get("interface_ids")))}
-- 来源节点：{md(joined(item.get("node_ids")))}
-- 权限要求：{md(item.get("permission_requirement"))}
-- 审计要求：{md(item.get("audit_requirement"))}
-- 证据来源：{md(joined(item.get("evidence_ids")))}
-- 待确认问题：{md(joined(item.get("question_ids")))}
+{field("业务目标", item.get("goal"))}
+{field("触发角色", joined(item.get("role_ids")))}
+{field("输入", joined(item.get("inputs")))}
+{field("输出", joined(item.get("outputs")))}
+{field("关联实体", joined(item.get("entity_ids")))}
+{field("关联规则", rule_refs(item.get("rule_ids")))}
+{field("关联状态", joined(item.get("state_ids")))}
+{field("接口依赖", joined(item.get("interface_ids")))}
+{field("来源节点", joined(item.get("node_ids")))}
+{field("权限要求", item.get("permission_requirement"))}
+{field("审计要求", item.get("audit_requirement"))}
+{field("证据来源", joined(item.get("evidence_ids")))}
+{field("待确认问题", joined(item.get("question_ids")))}
 
 **正常流程**
 
@@ -637,7 +702,7 @@ def generate_06(spec: dict[str, Any], header: str) -> str:
             joined(item.get("process_ids")),
             joined(item.get("node_ids")),
             joined(item.get("capability_ids")),
-            joined(item.get("rule_ids")),
+            rule_refs(item.get("rule_ids")),
             item.get("confidence"),
         )
         for item in spec.get("evidence", [])

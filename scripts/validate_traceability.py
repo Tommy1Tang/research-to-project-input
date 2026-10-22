@@ -29,6 +29,7 @@ from generate_project_input_from_spec import (
     generate_06,
     generate_07,
     generated_header,
+    rule_id,
 )
 
 GRAPH_NAMES = [
@@ -492,8 +493,12 @@ def validate_docs(
             errors.append(f"{path}: model_version is missing or stale")
         for collection in collections:
             for stable_id in sorted(ids[collection]):
-                if stable_id not in text:
-                    errors.append(f"{path}: missing required trace ID '{stable_id}'")
+                # Rules are projected under the contract-mandated `RULE-`
+                # prefix while the canonical spec keeps `R-`; compare against
+                # the projected form, not the stored one.
+                expected_id = rule_id(stable_id) if collection == "rules" else stable_id
+                if expected_id not in text:
+                    errors.append(f"{path}: missing required trace ID '{expected_id}'")
 
     overview = docs_dir / "00-项目概述.md"
     if overview.exists():

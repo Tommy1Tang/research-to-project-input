@@ -83,6 +83,7 @@ flowchart TD
   -> approved model-spec.json
   -> 重新生成批准版统一图、BPMN 与 OWL
   -> docs/input/00-07
+  -> docs/input/models/ 交付基线包
   -> 基线锁定和开发就绪校验
 ```
 
@@ -459,6 +460,13 @@ Hook 是额外防线，不替代 Runner、校验脚本和人工审核。
 
 不是。它们是经过模型审核的开发需求输入，后续 AI 应基于这些文件继续生成
 PRD、架构设计、Coding Task、代码和测试。
+
+### 下游 `agent-delivery-gate` 怎么接？
+
+`finalize` 会在 `docs/input/models/` 生成交付基线包：`spec/model-spec.json`、
+`bpmn/*.bpmn`、`ontology/*.owl`、`graph/**`，以及按下游契约命名的
+`baseline-manifest.json`。下游直接用 `validate_input_contract.py` 校验
+`docs/input/` 即可，不需要读取根目录的 `models/`。
 
 ### Hook 没有运行怎么办？
 

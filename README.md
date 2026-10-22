@@ -97,6 +97,7 @@ runs fully offline with no `pip install`.
 | `*.bpmn` | BPMN 2.0 + 完整 DI | 可在 Camunda Modeler 直接打开，画布可见 |
 | `*.owl` | OWL 2 本体 | 领域类、对象属性、状态实例，含中文 IRI 与 `zh-CN` 标签 |
 | `00-07-*.md` | 8 份开发输入 | 交给下游生成 PRD / Coding Task / 代码 / 测试 |
+| `docs/input/models/` | 交付基线包 | spec、BPMN、OWL、graph 与下游格式 manifest，供 `agent-delivery-gate` 直接校验和切片 |
 
 **生成物禁止手工修补。** 想改内容只有一条路：`reopen` 回到上游、改模型源、重新生成。
 这条规则由 Hook 强制，而不是靠自觉 —— 因为手工改一个投影，正是让多个产物悄悄互相

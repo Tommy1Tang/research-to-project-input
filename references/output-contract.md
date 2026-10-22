@@ -217,7 +217,39 @@ Gate checks:
 - Every approved critical object has evidence or a traceable open question.
 - Closed questions contain resolution, close date, and confirmer.
 
-## 7. Final Validation Checklist
+## 7. Delivery Baseline Package
+
+`finalize` projects the approved model package into the consumer layout used by
+`agent-delivery-gate`:
+
+```text
+docs/input/
+├── 00-项目概述.md ... 07-待确认问题.md
+└── models/
+    ├── baseline-manifest.json
+    ├── spec/model-spec.json
+    ├── bpmn/*.bpmn
+    ├── ontology/*.owl
+    └── graph/**
+```
+
+The projection is produced by `scripts/export_delivery_package.py` and is a
+deterministic copy of the approved `models/` tree, not a second authoring
+source. The root `models/` tree and `models/baseline-manifest.json` remain the
+research pipeline's own source and audit record.
+
+The delivery manifest uses the consumer contract:
+
+- `baselineId`, `specSource`, `hashAlgorithm`, `files[].path`, `files[].sha256`;
+- paths are relative to `docs/input/`;
+- every `00-07` file and every file under `docs/input/models/` is hashed;
+- the manifest never lists itself.
+
+The export removes stale files under `docs/input/models/` before copying. Do not
+edit the delivery package directly; change the approved source through a
+controlled reopen and regenerate.
+
+## 8. Final Validation Checklist
 
 Before final response:
 
@@ -229,3 +261,5 @@ Before final response:
 - Confirm facts, assumptions, and open questions are separated.
 - Confirm generated output is PRD-ready but does not pretend unresolved questions are solved.
 - Confirm `validate_traceability.py` returns PASS.
+- Confirm `docs/input/models/baseline-manifest.json` exists and hashes match the
+  delivery package when handing off to `agent-delivery-gate`.
